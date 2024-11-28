@@ -1,0 +1,332 @@
+// 全局变量
+@import "./variables.scss";
+// ele样式覆盖
+@import "./element-ui.scss";
+// 顶部右侧显示
+@import "./top.scss";
+// 导航标签
+@import "./tags.scss";
+// 工具类函数
+@import "./mixin.scss";
+// 侧面导航栏
+@import "./sidebar.scss";
+// 动画
+@import "./animate/vue-transition.scss";
+//适配
+@import "./media.scss";
+//通用配置
+@import "./normalize.scss";
+
+a {
+  text-decoration: none;
+  color: #333;
+}
+
+* {
+  outline: none;
+}
+
+// 关于 图标 CSS 的设置
+[class^="icon-"] {
+  font-family: "iconfont" !important;
+  /* 以下内容参照第三方图标库本身的规则 */
+  font-size: 18px !important;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.avue-input-icon__item i,
+.avue-crud__icon--small {
+  font-family: "iconfont" !important;
+  /* 以下内容参照第三方图标库本身的规则 */
+  font-size: 24px !important;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.el-menu-item [class^="icon-"] {
+  margin-right: 5px;
+  width: 24px;
+  text-align: center;
+  font-size: 18px;
+  vertical-align: middle;
+}
+
+.el-submenu [class^="icon-"] {
+  vertical-align: middle;
+  margin-right: 5px;
+  width: 24px;
+  text-align: center;
+  font-size: 18px;
+}
+.el-picker-panel.hide-time {
+  .el-button--text.el-picker-panel__link-btn {
+    display: none;
+  }
+}
+// textarea
+.textarea-input {
+  .el-textarea__inner {
+    padding: 5px 38px 5px 10px;
+  }
+}
+// 返回按钮定位样式
+.backBtn {
+  position: relative;
+  .backClass {
+    position: absolute;
+    right: 0;
+    z-index: 999;
+  }
+}
+
+.tostStyle {
+  margin-bottom: 10px;
+  margin-top: -30px;
+  padding: 5px;
+  border: 1px solid #ffa39e;
+  border-radius: 5px;
+  background-color: #fff2f1;
+}
+.curPrimary {
+  cursor: pointer;
+  color: #409eff;
+}
+.priBtn {
+  display: inline-block;
+  color: #409eff;
+  background: #ecf5ff;
+  border-color: #b3d8ff;
+  margin-right: 10px;
+  height: 24px;
+  padding: 0 10px;
+  line-height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.active {
+  border: 1px solid #02a7f0 !important;
+}
+.mt10 {
+  margin-top: 10px;
+}
+.mt20 {
+  margin-top: 20px;
+}
+.mr20 {
+  margin-right: 20px;
+}
+.ml20 {
+  margin-left: 20px;
+}
+.ml10 {
+  margin-left: 10px;
+}
+.ml5 {
+  margin-left: 5px;
+}
+.mr5 {
+  margin-right: 5px;
+}
+.mb10 {
+  margin-bottom: 10px;
+}
+.mb20 {
+  margin-bottom: 20px;
+}
+.border {
+  border: 1px solid #eee;
+}
+.p10 {
+  padding: 10px;
+}
+.p20 {
+  padding: 20px;
+}
+.pr10 {
+  padding-right: 10px;
+}
+.pb10 {
+  padding-bottom: 10px;
+}
+.fs16 {
+  font-size: 16px;
+}
+.fs18 {
+  font-size: 18px;
+}
+.start {
+  color: rgb(1, 209, 140) !important;
+  font-weight: bold;
+  cursor: pointer;
+}
+.forbidden {
+  color: #f56c6c;
+  font-weight: bold;
+  cursor: pointer;
+}
+.stop {
+  color: #ccc;
+  font-weight: bold;
+  cursor: pointer;
+}
+.must {
+  color: #f56c6c;
+  margin-right: 4px;
+}
+.danger {
+  color: #f56c6c;
+  cursor: pointer;
+}
+.pointer {
+  cursor: pointer;
+}
+.link {
+  cursor: pointer;
+  color: #02a7f0;
+}
+.comBtn {
+  cursor: pointer;
+  // margin-right: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 2px;
+}
+.btnDisable {
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  color: #b9b3b3 !important;
+  user-select: none !important;
+}
+.clamp3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  cursor: pointer;
+}
+.clamp2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  cursor: pointer;
+}
+.clamp1 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  cursor: pointer;
+}
+.clamp {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.primary {
+  color: #409eff;
+}
+.status {
+  color: rgba(3, 182, 21, 0.647058823529412);
+  font-weight: bold;
+}
+.notstatus {
+  color: rgba(217, 0, 27, 0.647058823529412);
+  font-weight: bold;
+}
+.arrange {
+  color: #02a7f0;
+  font-weight: bold;
+}
+.arrangetwo {
+  color: rgba(112, 182, 3, 0.647058823529412);
+  font-weight: bold;
+}
+.tags {
+  display: inline-block;
+  border: 1px solid #ecf5ff;
+  background-color: #ecf5ff;
+  padding: 2px;
+  margin: 2px;
+  border-radius: 5px;
+  color: #409eff;
+}
+.default {
+  display: inline-block;
+  border: 1px solid #ecf5ff;
+  background-color: #f8f7f7;
+  padding: 2px;
+  margin: 2px;
+  border-radius: 5px;
+}
+.fontBold {
+  font-weight: bold;
+}
+
+.imgWrap {
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+}
+
+.imgDialog {
+  ::v-deep .el-dialog__header {
+    background-color: #0285bd;
+    padding: 5px 10px;
+    .el-dialog__title {
+      color: #fff;
+    }
+    .el-dialog__headerbtn {
+      top: 10px;
+    }
+    .el-dialog__headerbtn .el-dialog__close {
+      color: #fff;
+    }
+  }
+  ::v-deep .el-dialog--center .el-dialog__body {
+    padding: 5px;
+  }
+}
+
+// 滚动条整体
+::-webkit-scrollbar {
+  z-index: 50;
+  width: 6px;
+  height: 3px;
+}
+
+// 滚动条滑道
+::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0);
+}
+
+// 滚动滑块样式
+::-webkit-scrollbar-thumb {
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  background-color: rgba(20, 20, 20, 0.1);
+  transition: all 0.2s;
+  height: 20px;
+  border: 1px solid rgba(34, 34, 34, 0.2);
+}
+
+// 滚动条的样式，是可以跟 :hover 伪类叠加使用的
+// 滚动条鼠标悬浮时的样式
+:hover::-webkit-scrollbar-thumb {
+  transition: all 0.2s;
+}
+// 滚动条上下的箭头按钮
+::-webkit-scrollbar-button {
+  display: none;
+}
+::-webkit-scrollbar-corner {
+  display: none;
+}

@@ -1,0 +1,152 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>APP下载</title>
+
+    <style
+      scoped=""
+      lang="scss"
+    >
+      * {
+        margin: 0px;
+        padding: 0px;
+      }
+      .container {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        .donwnloadBtn {
+          width: 100px;
+          height: 40px;
+          line-height: 40px;
+          text-align: center;
+          color: #fff;
+          background-color: #409eff;
+          border-color: #409eff;
+          border-radius: 3px;
+          cursor: pointer;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <input
+        style="opacity: 0; position: absolute; top: 0"
+        id="copyContent"
+      />
+      <div
+        class="donwnloadBtn"
+        id="donwnloadBtn"
+      >
+        去下载
+      </div>
+    </div>
+
+    <script>
+      window.onload = () => {
+        const url = new URL(window.location.href)
+        const inviteCode = url.searchParams.get('inviteCode')
+        const p = url.searchParams.get('p')
+        const bp = url.searchParams.get('bp')
+
+        document.body.addEventListener('click', e => {
+          const inputElement = document.querySelector('#copyContent')
+          if (!inviteCode) {
+            alert('未获取到 inviteCode 参数')
+          }
+          const params = {
+            inviteCode: inviteCode,
+            p: p,
+            bp: bp,
+            oldInviteCode: 'inviteCode=' + inviteCode + '&p=' + p + '&bp=' + bp
+          }
+          const strJson = JSON.stringify(params)
+          // inputElement.value = window.location.href
+          inputElement.value = strJson
+          inputElement.select()
+          document.execCommand('copy')
+        })
+
+        const ENUM_DEVICE = {
+          PC: 'PC',
+          IOS: 'IOS',
+          Android: 'Android'
+        }
+
+        const judgeClient = () => {
+          const u = navigator.userAgent
+          const isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1 // 判断是否是 android终端
+          const isIOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/) // 判断是否是 iOS终端
+          if (isAndroid) {
+            return ENUM_DEVICE.Android
+          }
+          if (isIOS) {
+            return ENUM_DEVICE.IOS
+          }
+          return ENUM_DEVICE.PC
+        }
+
+        document.getElementById('donwnloadBtn').onclick = () => {
+          const api_url =
+            '/api/marketing/web/package/packageInstallUrl?inviteCode=' +
+            inviteCode +
+            '&registerBusPlatformId=' +
+            p
+          // alert('api_url=' + api_url)
+          fetch(api_url, {
+            method: 'GET',
+            headers: {
+              'bus-platform-id': bp
+            }
+          })
+            .then(response => response.json())
+            .then(json => {
+              const data = json.data
+              const device = judgeClient()
+              // alert('data=' + JSON.stringify(data))
+              if (device === ENUM_DEVICE.Android) {
+                if (data.android?.packageDownloadURL) {
+                  window.location.href = data.android.packageDownloadURL
+                } else {
+                  alert('当前二维码不支持Android包下载')
+                }
+              }
+              if (device === ENUM_DEVICE.IOS) {
+                if (data.ios?.packageDownloadURL) {
+                  const action_url =
+                    'itms-services://?action=download-manifest&url='
+                  const ALL_URL = action_url + data.ios.packageDownloadURL
+                  window.location.href = ALL_URL
+                } else {
+                  alert('当前二维码不支持IOS包下载')
+                }
+              }
+
+              if (device === ENUM_DEVICE.PC) {
+                if (
+                  data.android?.packageDownloadURL ||
+                  data.ios?.packageDownloadURL
+                ) {
+                  window.location.href =
+                    data.android?.packageDownloadURL ||
+                    data.ios?.packageDownloadURL
+                } else {
+                  alert('当前二维码不支持 PC 包下载')
+                }
+              }
+            })
+            .catch(err => {
+              alert('服务器异常')
+            })
+        }
+      }
+    </script>
+  </body>
+</html>

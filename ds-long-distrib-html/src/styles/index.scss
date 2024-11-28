@@ -1,0 +1,89 @@
+@import "./sidebar";
+@import "./reset";
+@import "./dark";
+
+.app-container {
+  padding: 10px;
+}
+
+.search-container {
+  padding: 18px 0 0 10px;
+  margin-bottom: 10px;
+  background-color: var(--el-bg-color-overlay);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 4px;
+  box-shadow: var(--el-box-shadow-light);
+}
+
+.link-type,
+.link-type:focus {
+  color: #337ab7;
+  cursor: pointer;
+
+  &:hover {
+    color: rgb(32 160 255);
+  }
+}
+
+.font14 {
+  font-size: 14px;
+  line-height: 16px;
+}
+
+.activeBule {
+  color: rgb(32 160 255);
+  cursor: pointer;
+}
+
+.mt3 {
+  margin-top: 3px;
+}
+
+.mt5 {
+  margin-top: 5px;
+}
+
+.mt10 {
+  margin-top: 10px;
+}
+
+.mt20 {
+  margin-top: 20px;
+}
+
+.ml10 {
+  margin-left: 10px;
+}
+
+.ml20 {
+  margin-left: 20px;
+}
+
+.mb20 {
+  margin-bottom: 20px;
+}
+
+.mb10 {
+  margin-bottom: 10px;
+}
+
+.mb5 {
+  margin-bottom: 5px;
+}
+
+.pb10 {
+  padding-bottom: 10px;
+}
+
+.pr2 {
+  padding-right: 2px;
+}
+
+.must {
+  margin-right: 4px;
+  color: #f56c6c;
+}
+
+.red {
+  color: #f06;
+}

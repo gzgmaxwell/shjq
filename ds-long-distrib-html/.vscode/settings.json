@@ -1,0 +1,9 @@
+  {
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.fixAll.stylelint": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode", // 指定 prettier 为所有文件默认格式化器
+  "stylelint.validate": ["css", "scss", "vue", "html"] // Stylelint 校验文件
+}

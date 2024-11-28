@@ -1,0 +1,35 @@
+$videoWit: 100%;
+.video-audit{
+    .video-audit-container{
+        height:420px;
+        border:1px solid #eee;
+        display:flex;
+        justify-content:space-evenly;
+        align-items:center;
+        .video-content{
+            min-width: 700px;
+            height: 400px;
+            .loading{
+                width: 700px;
+                height: 393.5px;
+                background: #000;
+            }
+            .loading-failed{
+                width: 700px;
+                height: 393.5px;
+                background: #000;
+                text-align: center;
+                line-height: 393px;
+                color: #409eff;
+            }
+        }
+        .describe{
+        width: 900px;
+        height: 400px;
+        .describe-text{
+         font-size: 12px;
+         color: #797c87;
+        }
+        }
+    }
+}

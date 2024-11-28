@@ -1,0 +1,91 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE_PATH = "52.80.254.154:30123\\/dstech_private\\/web\\/ds-long-html-dev"
+        GIT_PROJECT_URL = "/web/ds-long-html.git"
+
+        GIT_CREDENTIALS_ID = "5580528e-9a66-48bd-ad3c-d796f54984a8"
+        GIT_URL = "http://52.81.253.139:11110/"
+        HARBOR_DOCKER_HUB = "http://52.80.254.154:30123"
+        HARBOR_USERNAME = "robot\\\$jenkins_harbor"
+        HARBOR_PWD = "tdqzhl28frYhTbfZEB7MnXvAfxshZwpw"
+        RANCHER_K8S_SERVER_URL ="https:\\/\\/10.0.16.35:30443\\/k8s\\/clusters\\/c-sprvt"
+
+    }
+
+    parameters {
+        string(defaultValue:"dev", description: '代码分支',name: 'BRANCH')
+
+        booleanParam(name: 'INIT_DEPLOY', defaultValue: false, description: '是否初次部署')
+    }
+
+    stages {
+        stage('代码克隆') {
+            steps {
+
+                cleanWs()
+				checkout scmGit(branches: [[name: "${params.BRANCH}"]], extensions: [], userRemoteConfigs: [[credentialsId: "${GIT_CREDENTIALS_ID}", url: "${GIT_URL}${GIT_PROJECT_URL}"]])
+                sh """
+					echo "拉取代码完成"
+					ls -la
+				"""
+
+			}
+        }
+        stage('NodeJs构建') {
+             agent {
+                docker {
+                    image 'node:16.20.0-alpine3.18'
+                    reuseNode true
+
+                }
+            }
+            steps {
+				sh """
+				ls -la
+				echo "node构建"
+				npm config set registry http://registry.npm.taobao.org/
+                npm install
+                npm run build:prod
+
+				"""
+			}
+        }
+        stage('Docker镜像') {
+            steps {
+				sh """
+				    ls -la
+					echo "Docker镜像"
+					docker login -u ${HARBOR_USERNAME} -p ${HARBOR_PWD} ${HARBOR_DOCKER_HUB}
+					sed -i 's/ds-gateway.basic/ds-gateway-web.basic/g' admin-nginx.conf
+					docker build -t ${DOCKER_IMAGE_PATH}:${BUILD_NUMBER}  .
+					docker push ${DOCKER_IMAGE_PATH}:${BUILD_NUMBER}
+				"""
+
+
+
+			}
+
+        }
+         stage('部署') {
+
+            steps {
+				sh """
+                curl -o config https://ds-static-public.s3.cn-north-1.amazonaws.com.cn/ds-dev.yaml
+                sed -i 's/SERVER_URL/${RANCHER_K8S_SERVER_URL}/g' config
+                cat config
+                curl -o kubectl https://ds-static-public.s3.cn-north-1.amazonaws.com.cn/kubectl
+                ls -la
+                chmod +777 kubectl
+                sed -i 's/\${IMAGE}/${DOCKER_IMAGE_PATH}:${BUILD_NUMBER}/g' deployment.yaml
+                ./kubectl apply -f deployment.yaml --kubeconfig=config --insecure-skip-tls-verify --validate=false
+
+				"""
+
+			}
+        }
+
+    }
+
+}

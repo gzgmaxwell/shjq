@@ -1,0 +1,35 @@
+# aws CI/CD build 文件
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - n 16.10.0
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR... 
+      - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ECR_URL 
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - # Java 项目使用mvn 部分项目需要更换mvn项目 已原先jenkinsfile 中的mvn 命令为准。node 项目改为 npm 
+      - node --version
+      - npm install
+      - npm run build:prod
+      - date=`date +%Y%m%d%H%M`
+      - # IMAGE_REPO_NAME 是全局变量 需在CodeBuild console上配置  下文阐述如何配置
+      - docker build -t $IMAGE_REPO_NAME:$date .
+      - docker tag $IMAGE_REPO_NAME:$date $ECR_URL/$IMAGE_REPO_NAME:$date
+      - aws s3 cp  $KUBECONFIG_URL kube-config.yaml
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - echo $ECR_URL/$IMAGE_REPO_NAME:$date
+      - docker push $ECR_URL/$IMAGE_REPO_NAME:$date
+      - IMAGE_URL=$ECR_URL\\/$IMAGE_REPO_NAME:$date
+      - echo $IMAGE_URL
+      - sed -i "s/\${IMAGE}/$IMAGE_URL/g" deployment.yaml          
+      - cat deployment.yaml
+      - kubectl apply -f deployment.yaml --kubeconfig=kube-config.yaml --insecure-skip-tls-verify --validate=false

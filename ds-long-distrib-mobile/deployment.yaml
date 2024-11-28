@@ -1,0 +1,55 @@
+#deploy
+apiVersion: apps/v1
+kind: Deployment
+#kind: StatefulSet
+metadata:
+  name: ds-long-distrib-mobile
+  namespace: web
+spec:
+  selector:
+    matchLabels:
+      app: ds-long-distrib-mobile
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ds-long-distrib-mobile
+    spec:
+      imagePullSecrets:
+        - name: harbor-pull-secrets
+      containers:
+        - name: ds-long-distrib-mobile
+          image: ${IMAGE}
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+          resources:
+            limits:
+              cpu: 0
+              memory: 0
+            requests:
+              cpu: 0
+              memory: 0
+
+---
+#service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ds-long-distrib-mobile
+  namespace: web
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 80
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: 443
+  selector:
+    app: ds-long-distrib-mobile
+---
+
