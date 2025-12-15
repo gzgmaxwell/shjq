@@ -59,7 +59,7 @@ export const dynamicRouter = [
     component: Layout,
     path: "/agent-manage",
     meta: {
-      title: "代理管理",
+      title: "下级渠道管理",
       langKey: "/agent-manage",
       icon: "system",
       hidden: false,
@@ -71,8 +71,32 @@ export const dynamicRouter = [
         component: () => import("@/views/agent-manage/agent-list/index.vue"),
         path: "/agent-manage/agent-list/index",
         meta: {
-          title: "代理列表",
+          title: "下级渠道商",
           langKey: "/agent-manage/agent-list/index",
+          icon: "system",
+          hidden: false,
+          roles: ["ADMIN"],
+          keepAlive: true,
+        },
+      },
+      {
+        component: () => import("@/views/agent-manage/packge-list/index.vue"),
+        path: "/agent-manage/packge-list/index",
+        meta: {
+          title: "获取安装包",
+          langKey: "/agent-manage/packge-list/index",
+          icon: "system",
+          hidden: false,
+          roles: ["ADMIN"],
+          keepAlive: true,
+        },
+      },
+      {
+        component: () => import("@/views/agent-manage/signature/index.vue"),
+        path: "/agent-manage/signature/index",
+        meta: {
+          title: "签名审核记录",
+          langKey: "/agent-manage/signature/index",
           icon: "system",
           hidden: false,
           roles: ["ADMIN"],

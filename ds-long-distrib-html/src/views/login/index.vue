@@ -188,6 +188,7 @@ watch(
           .then((res: any) => {
             googleAuth.bindStatus = res.data.data.bindStatus;
             googleAuth.googleAuthenticatorStatus = res.data.data.googleAuthenticatorStatus;
+            localStorage.setItem("BusPlatformId", res.data.data.busPlatformId);
             return Promise.resolve();
           });
       };

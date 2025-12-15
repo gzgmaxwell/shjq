@@ -60,7 +60,7 @@ export default {
   // ---------route------------------------
   dashboard: "首页",
   document: "项目文档",
-  "/agent-manage": "渠道商管理",
+  "/agent-manage": "下级渠道管理",
   "/agent-manage/agent-list/index": "下级渠道商",
   "/agent-manage/project-list/index": "我的项目",
   "/agent-manage/individual-account/levelone": "我的个人账户",

@@ -18,6 +18,10 @@ service.interceptors.request.use(
     } else {
       console.info("token 无效");
     }
+    const BusPlatformId = config.headers.selfplatformid || localStorage.getItem("BusPlatformId");
+    if (BusPlatformId) {
+      config.headers["bus-platform-id"] = BusPlatformId;
+    }
     return config;
   },
   (error: any) => {
@@ -41,8 +45,6 @@ service.interceptors.response.use(
     return Promise.reject(new Error(message));
   },
   (error: any) => {
-    console.log(111, error);
-
     if (error.response.status === 500) {
       ElMessage.error(error.response.statusText || "系统出错");
       return Promise.reject(error.response.statusText || "系统出错");
@@ -51,6 +53,7 @@ service.interceptors.response.use(
     if (error.response.status === 401) {
       localStorage.clear();
       resetRouter();
+      console.log(error);
       return;
     }
     if (error.response.data) {
