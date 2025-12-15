@@ -280,39 +280,33 @@
             ></el-input>
           </el-form-item>
         </el-col>
-        <!--   4.4.8需求隐藏     <el-col :span="12" v-if="showFreeTime(form.watchLevel)">
-          <el-form-item label="免费时长" prop="freeViewRatio">
-            <el-input-number
-              style="width: 208px"
-              placeholder="免费时长"
-              :min="0"
-              :precision="0"
-              :step="1"
-              :max="100"
-              v-model="form.freeViewRatio"
-            ></el-input-number>
-            <span class="ml10">%</span>
-          </el-form-item>
-        </el-col> -->
-        <!--   4.4.8需求隐藏     <el-col :span="12" v-if="comPrice(form.watchLevel)">
-          <el-form-item label="金币个数" prop="price">
-            <el-input-number
-              style="width: 208px"
-              placeholder="金币数（个）"
-              :min="1"
-              v-model="form.price"
-            ></el-input-number>
-          </el-form-item>
-        </el-col> -->
         <el-col :span="12">
           <el-form-item label="是否收费" prop="paidVideo">
             <el-select
               v-model="form.paidVideo"
+              :disabled="compDisabledPaidVideo(row)"
               clearable
               placeholder="请选择是否收费"
             >
               <el-option
                 v-for="item in optPaidVideo"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
+              >
+              </el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12" v-if="compuAdandSlicing()">
+          <el-form-item label="水印处理类型" prop="manualProcessing">
+            <el-select
+              v-model="form.manualProcessing"
+              clearable
+              placeholder="请选择水印处理类型"
+            >
+              <el-option
+                v-for="item in optWatermarkType"
                 :key="item.id"
                 :label="item.name"
                 :value="item.id"
@@ -377,48 +371,6 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="视频下载权限" prop="download">
-            <el-select
-              :disabled="compDisabled(row)"
-              v-model="form.download"
-              placeholder="请选择视频下载权限"
-              clearable
-            >
-              <el-option
-                v-for="item in optionsDownload"
-                :key="item.id"
-                :value="item.id"
-                :label="item.name"
-              >
-              </el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-
-        <!-- 4.4.9去除视频评分     <el-col :span="12" v-if="showFirstScoring()">
-          <el-form-item label="视频评分">
-            <el-input-number
-              style="width: 208px"
-              placeholder="视频评分"
-              :min="1"
-              :precision="1"
-              :step="0.5"
-              :max="10"
-              v-model="form.firstScoring"
-            ></el-input-number>
-            <span class="ml10">分</span>
-            <el-popover
-              placement="top"
-              trigger="hover"
-              content="支持输入1-10分，支持一位小数点"
-              class="ml5"
-            >
-              <span slot="reference" class="el-icon-question question"></span>
-            </el-popover>
-          </el-form-item>
-        </el-col> -->
-
-        <el-col :span="12" v-if="compuClassifyIdWeb()">
           <el-form-item label="后台标签" prop="classifyIdWeb">
             <el-select
               v-model="form.classifyIdWeb"
@@ -538,11 +490,12 @@ import {
   enum_paidVideo,
   debounceCallBack,
   AuthorStatus,
-  ENUM_WATCH_PERMISSION,
-  optionsDownload,
+  EnumDownload,
   channelEnum,
   ENUM_USER_STATUS,
   optSliceLevel,
+  optWatermarkType,
+  EnumWatermarkType,
 } from "@/util/util";
 import { mapGetters } from "vuex";
 
@@ -589,13 +542,13 @@ export default {
       imageCut: false,
       duration: 0,
       optSliceLevel: optSliceLevel,
-      optionsDownload: optionsDownload,
       classifyDefaultArray: [],
       selectedIds: [],
       optionAuthor: [],
       optionTopic: [],
       optionAuthority: optionWatchPermission,
       optPaidVideo: optPaidVideo,
+      optWatermarkType: optWatermarkType,
       fileList: [],
       fileListVer: [],
       W2HRate: 0,
@@ -614,7 +567,8 @@ export default {
         paidVideo: "",
         price: "",
         classifyId: [],
-        download: "",
+        download: EnumDownload.one,
+        manualProcessing: EnumWatermarkType.FASLE,
         topicIds: [],
         freeViewRatio: 10,
         classifyIdWeb: [],
@@ -697,15 +651,12 @@ export default {
             trigger: "blur",
           },
         ],
-        download: [
+        manualProcessing: [
           {
             required: true,
-            message: "选择视频下载权限",
-            trigger: "change",
+            message: "请选择水印处理类型",
+            trigger: "blur",
           },
-        ],
-        freeViewRatio: [
-          { required: true, message: "请输入免费时长", trigger: "blur" },
         ],
         convertSort: [
           { required: true, message: "请选择切片优先级", trigger: "change" },
@@ -806,6 +757,14 @@ export default {
         return false;
       };
     },
+    compDisabledPaidVideo() {
+      return (row) => {
+        if (row?.channel === channelEnum.APP) {
+          return true;
+        }
+        return false;
+      };
+    },
     compWeightScoreDisabled() {
       return () => {
         if (this.webPageMenu === menuEnum.rentVideoCenter) {
@@ -841,19 +800,6 @@ export default {
         return true;
       };
     },
-    /* 4.4.9去除视频评分    showFirstScoring() {
-      return () => {
-        const arr = [
-          menuEnum.cmsVideoManage,
-          menuEnum.violationCheck,
-          menuEnum.rentVideoCenter,
-        ];
-        if (arr.includes(this.webPageMenu)) {
-          return false;
-        }
-        return true;
-      };
-    }, */
 
     compuAdandSlicing() {
       return () => {
@@ -877,14 +823,6 @@ export default {
         return true;
       };
     },
-    /*  4.4.8需求隐藏   showFreeTime() {
-      return (watchLevel) => {
-        const arr = [ENUM_WATCH_PERMISSION.svip, ENUM_WATCH_PERMISSION.charge];
-        if (this.webPageMenu === menuEnum.rentVideoCenter) return false;
-        if (arr.includes(watchLevel)) return true;
-        return false;
-      };
-    }, */
     compLabel() {
       return (val) => {
         const item = AuthorStatus.filter(
@@ -1046,7 +984,6 @@ export default {
       this.form.topicIds = topicIds;
       this.form.thirdUserName = this.row.thirdUserName;
       this.form.freeViewRatio = this.row.freeViewRatio;
-      // this.form.firstScoring = this.row.firstScoring || 5;
       this.form.classifyIdWeb = this.row.classifyIdWeb
         ? this.row.classifyIdWeb?.split(",")
         : [];
@@ -1055,6 +992,7 @@ export default {
       this.form.thirdUserName = this.row.thirdUserName;
       this.form.convertSort = this.row.convertSort;
       this.form.adTime = this.row.adTime;
+      this.form.manualProcessing = this.row.manualProcessing;
       //权重分值
       this.form.weightScore =
         this.row.weightScore !== undefined && this.row.weightScore !== null
@@ -1206,7 +1144,6 @@ export default {
         preId: this.row.preId,
         isSubmit: isPublish,
         webPageMenu: this.webPageMenu,
-        // firstScoring: this.form.firstScoring,
         freeViewRatio: this.form.freeViewRatio,
         classifyIdWeb,
         coverFileName: this.form.coverFileName,

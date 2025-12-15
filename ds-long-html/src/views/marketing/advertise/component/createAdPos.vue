@@ -161,6 +161,41 @@
       <span class="ml10">秒</span>
     </el-form-item>
 
+    <el-form-item
+      label="关闭次数"
+      prop="closeCount"
+      v-if="showCloseCount(ruleForm)"
+    >
+      <el-input-number
+        placeholder="关闭次数"
+        :min="1"
+        :max="9999"
+        :step="1"
+        step-strictly
+        v-model="ruleForm.closeCount"
+      />
+    </el-form-item>
+
+    <el-form-item v-if="showShowZone(ruleForm)">
+      <span slot="label"> <span class="must">*</span>显示区域 </span>
+      <div class="zoneWrap">
+        <div
+          class="showZoneWrap"
+          :class="{ isActive: item.isActive }"
+          v-for="item in optShowZone"
+          @click="choiceShowZone(item)"
+        >
+          <img
+            src="@/assets/img/showZone.png"
+            alt=""
+            width="40"
+            height="40"
+            :class="item.id"
+          />
+        </div>
+      </div>
+    </el-form-item>
+
     <el-form-item label="广告状态:">
       <el-radio-group v-model="ruleForm.status">
         <el-radio
@@ -216,6 +251,8 @@ import {
   EnumLocationType,
   debounceCallBack,
   EnumAdVipSkipStatus,
+  optShowZone,
+  EnumShowZone,
 } from "@/util/util";
 
 export default {
@@ -248,11 +285,14 @@ export default {
         adVipSkipStatus: EnumAdVipSkipStatus.off,
         adVipSkipTime: undefined,
         frequency: 5,
+        closeCount: 1,
+        displayArea: optShowZone.find((v) => v.isActive)?.id,
       },
       options: [],
       optionAdType: optionAdType,
       optionComStatus: optionComStatus,
       optionLocationType: optionLocationType,
+      optShowZone: optShowZone,
       assets: [],
       rules: {
         advertLocationName: [
@@ -278,6 +318,7 @@ export default {
           },
         ],
         frequency: [{ required: true, message: "请输入", trigger: "blur" }],
+        closeCount: [{ required: true, message: "关闭次数", trigger: "blur" }],
       },
     };
   },
@@ -320,7 +361,6 @@ export default {
     cmpVideoWeight() {
       return (ruleForm) => {
         const isHideArr = [
-          EnumAdType.INDEX_PAGE_POP_UPS, // 首页弹窗
           EnumAdType.EVENT_PAGE, //  动态列表
           EnumAdType.APP_LAUNCH_PAGE, //APP启动页,
           EnumAdType.TALK_PAGE, //话题详情
@@ -333,6 +373,17 @@ export default {
           EnumAdType.FIRST_PAGE, //  一级页面
           EnumAdType.BULLET_AD, //  动态列表-合集
           EnumAdType.SHORT_VIDEO_FLOW, // 短视频播放器信息流
+          EnumAdType.INDEX_PAGE_POP_UPS, // 首页弹窗
+          EnumAdType.CHANNEL_PAGE_POP_UPS, // 频道弹窗
+          EnumAdType.GAME_PAGE_POP_UPS, // 游戏弹窗
+          EnumAdType.MINE_PAGE_POP_UPS, // 我的弹窗
+          EnumAdType.MSG_PAGE_POP_UPS, // 消息弹窗
+          EnumAdType.WEAK_NETWORK_AD, // 弱网广告
+          EnumAdType.INDEX_PAGE_FLOAT_UPS, // 首页浮窗
+          EnumAdType.GAME_PAGE_FLOAT_UPS, // 游戏浮窗
+          EnumAdType.CHANNEL_PAGE_FLOAT_UPS, // 频道浮窗
+          EnumAdType.MSG_PAGE_FLOAT_UPS, // 消息浮窗
+          EnumAdType.MINE_PAGE_FLOAT_UPS, // 我的浮窗
         ];
         if (ruleForm.locationType === EnumLocationType.FIXED) {
           if (isHideArr.includes(ruleForm.fixLocation)) {
@@ -374,8 +425,7 @@ export default {
         if (ruleForm.fixLocation === EnumAdType.VIDEO_DETAIL_PAGE) {
           return false;
         }
-        const isShowArr = [
-          EnumAdType.INDEX_PAGE_POP_UPS, // 首页弹窗
+        const isDisabled = [
           EnumAdType.EVENT_PAGE, // 动态列表
           EnumAdType.APP_LAUNCH_PAGE, //APP启动页,
           EnumAdType.TALK_PAGE, // 话题详情
@@ -385,9 +435,20 @@ export default {
           EnumAdType.EVENT_PAGE_VIDEO, //  动态列表-视频
           EnumAdType.EVENT_PAGE_COLLECT, //  动态列表-合集
           EnumAdType.VIDEO_STOP_AD, //  动态列表-合集
+          EnumAdType.INDEX_PAGE_POP_UPS, // 首页弹窗
+          EnumAdType.CHANNEL_PAGE_POP_UPS, // 频道弹窗
+          EnumAdType.GAME_PAGE_POP_UPS, // 游戏弹窗
+          EnumAdType.MINE_PAGE_POP_UPS, // 我的弹窗
+          EnumAdType.MSG_PAGE_POP_UPS, // 消息弹窗
+          EnumAdType.WEAK_NETWORK_AD, // 弱网广告
+          EnumAdType.INDEX_PAGE_FLOAT_UPS, // 首页浮窗
+          EnumAdType.GAME_PAGE_FLOAT_UPS, // 游戏浮窗
+          EnumAdType.CHANNEL_PAGE_FLOAT_UPS, // 频道浮窗
+          EnumAdType.MSG_PAGE_FLOAT_UPS, // 消息浮窗
+          EnumAdType.MINE_PAGE_FLOAT_UPS, // 我的浮窗
         ];
         if (ruleForm.locationType === EnumLocationType.FIXED) {
-          return isShowArr.includes(ruleForm.fixLocation);
+          return isDisabled.includes(ruleForm.fixLocation);
         }
         if (ruleForm.location === EnumAdType.VIDEO_FLOW) {
           return true;
@@ -399,12 +460,55 @@ export default {
     showAdVipSkipStatus() {
       return (ruleForm) => {
         if (ruleForm.fixLocation === EnumAdType.VIDEO_INSERT_AD) return true;
+        this.ruleForm.adVipSkipStatus = EnumAdVipSkipStatus.off;
         return false;
       };
     },
     isShowVideoRate() {
       return (ruleForm) => {
         if (ruleForm.fixLocation === EnumAdType.SHORT_VIDEO_FLOW) {
+          return true;
+        }
+        return false;
+      };
+    },
+    showCloseCount() {
+      return (ruleForm) => {
+        const arr = [
+          EnumAdType.INDEX_PAGE_POP_UPS,
+          EnumAdType.VIDEO_STOP_AD,
+          EnumAdType.VIDEO_INSERT_AD,
+          EnumAdType.VIDEO_DETAIL_AUTHOR_DESC,
+          EnumAdType.VIDEO_DETAIL_FLOATING_WINDOW,
+          EnumAdType.FIRST_PAGE,
+          EnumAdType.CHANNEL_PAGE_POP_UPS,
+          EnumAdType.MINE_PAGE_POP_UPS,
+          EnumAdType.GAME_PAGE_POP_UPS,
+          EnumAdType.MSG_PAGE_POP_UPS,
+          EnumAdType.INDEX_PAGE_FLOAT_UPS,
+          EnumAdType.APP_LAUNCH_PAGE,
+          EnumAdType.GAME_PAGE_FLOAT_UPS,
+          EnumAdType.CHANNEL_PAGE_FLOAT_UPS,
+          EnumAdType.MSG_PAGE_FLOAT_UPS,
+          EnumAdType.MINE_PAGE_FLOAT_UPS,
+        ];
+        if (arr.includes(ruleForm.fixLocation)) {
+          return true;
+        }
+        return false;
+      };
+    },
+
+    showShowZone() {
+      return (ruleForm) => {
+        const arr = [
+          EnumAdType.INDEX_PAGE_FLOAT_UPS, // 首页浮窗
+          EnumAdType.GAME_PAGE_FLOAT_UPS, // 游戏浮窗
+          EnumAdType.CHANNEL_PAGE_FLOAT_UPS, // 频道浮窗
+          EnumAdType.MSG_PAGE_FLOAT_UPS, // 消息浮窗
+          EnumAdType.MINE_PAGE_FLOAT_UPS, // 我的浮窗
+        ];
+        if (arr.includes(ruleForm.fixLocation)) {
           return true;
         }
         return false;
@@ -440,6 +544,13 @@ export default {
       }
     },
     fixLocationChange(val) {
+      this.optShowZone.forEach((v) => {
+        if (v.id === EnumShowZone.UPPER_LEFT) {
+          v.isActive = true;
+        } else {
+          v.isActive = false;
+        }
+      });
       const isInfoFlow = [
         EnumAdType.EVENT_PAGE,
         EnumAdType.VIDEO_DETAIL_PAGE,
@@ -452,12 +563,30 @@ export default {
         EnumAdType.SHORT_VIDEO_FLOW,
       ];
 
+      const is_POP_UPS = [
+        EnumAdType.INDEX_PAGE_POP_UPS, // 首页弹窗
+        EnumAdType.CHANNEL_PAGE_POP_UPS, // 频道弹窗
+        EnumAdType.GAME_PAGE_POP_UPS, // 游戏弹窗
+        EnumAdType.MINE_PAGE_POP_UPS, // 我的弹窗
+        EnumAdType.MSG_PAGE_POP_UPS, // 消息弹窗
+      ];
+
+      const is_FLOATING_WINDOW = [
+        EnumAdType.INDEX_PAGE_FLOAT_UPS, // 首页浮窗
+        EnumAdType.GAME_PAGE_FLOAT_UPS, // 游戏浮窗
+        EnumAdType.CHANNEL_PAGE_FLOAT_UPS, // 频道浮窗
+        EnumAdType.MSG_PAGE_FLOAT_UPS, // 消息浮窗
+        EnumAdType.MINE_PAGE_FLOAT_UPS, // 我的浮窗
+      ];
+
       if (isInfoFlow.includes(val)) {
         this.ruleForm.location = EnumAdType.VIDEO_FLOW;
       } else if (val === EnumAdType.VIDEO_DETAIL_FLOATING_WINDOW) {
         this.ruleForm.location = EnumAdType.FLOATING_WINDOW;
-      } else if (val === EnumAdType.INDEX_PAGE_POP_UPS) {
+      } else if (is_POP_UPS.includes(val)) {
         this.ruleForm.location = EnumAdType.POP_UPS;
+      } else if (is_FLOATING_WINDOW.includes(val)) {
+        this.ruleForm.location = EnumAdType.FLOATING_WINDOW;
       } else if (
         val === EnumAdType.PORTRAIT_BOTTOM_BANNER ||
         val === EnumAdType.FIRST_PAGE
@@ -468,7 +597,6 @@ export default {
       }
 
       const isImgWeight = [
-        EnumAdType.INDEX_PAGE_POP_UPS, // 首页弹窗
         EnumAdType.EVENT_PAGE, //  动态列表
         EnumAdType.VIDEO_DETAIL_PAGE, //  视频详情
         EnumAdType.APP_LAUNCH_PAGE, //APP启动页,
@@ -480,6 +608,17 @@ export default {
         EnumAdType.PORTRAIT_BOTTOM_BANNER,
         EnumAdType.FIRST_PAGE,
         EnumAdType.VIDEO_STOP_AD,
+        EnumAdType.INDEX_PAGE_POP_UPS, // 首页弹窗
+        EnumAdType.CHANNEL_PAGE_POP_UPS, // 频道弹窗
+        EnumAdType.GAME_PAGE_POP_UPS, // 游戏弹窗
+        EnumAdType.MINE_PAGE_POP_UPS, // 我的弹窗
+        EnumAdType.MSG_PAGE_POP_UPS, // 消息弹窗
+        EnumAdType.WEAK_NETWORK_AD, // 弱网广告
+        EnumAdType.INDEX_PAGE_FLOAT_UPS, // 首页浮窗
+        EnumAdType.GAME_PAGE_FLOAT_UPS, // 游戏浮窗
+        EnumAdType.CHANNEL_PAGE_FLOAT_UPS, // 频道浮窗
+        EnumAdType.MSG_PAGE_FLOAT_UPS, // 消息浮窗
+        EnumAdType.MINE_PAGE_FLOAT_UPS, // 我的浮窗
       ];
 
       if (isImgWeight.includes(val)) {
@@ -516,6 +655,17 @@ export default {
       this.ruleForm.adVipSkipStatus = this.row.adVipSkipStatus;
       this.ruleForm.adVipSkipTime = this.row.adVipSkipTime;
       this.ruleForm.frequency = this.row.frequency;
+      this.ruleForm.closeCount = this.row.closeCount || 1;
+      this.ruleForm.displayArea = this.row.displayArea;
+      this.optShowZone.forEach((v) => {
+        if (this.row.displayArea) {
+          if (v.id === this.row.displayArea) {
+            v.isActive = true;
+          } else {
+            v.isActive = false;
+          }
+        }
+      });
     },
     submitForm(formName) {
       this.$refs[formName].validate((valid) => {
@@ -526,6 +676,17 @@ export default {
           return false;
         }
       });
+    },
+
+    choiceShowZone(item) {
+      this.optShowZone.forEach((v) => {
+        if (v.id === item.id) {
+          v.isActive = true;
+        } else {
+          v.isActive = false;
+        }
+      });
+      this.ruleForm.displayArea = item.id;
     },
     commit() {
       const excludeList = [
@@ -562,3 +723,41 @@ export default {
   },
 };
 </script>
+<style lang="scss" scoped="scoped">
+.zoneWrap {
+  display: flex;
+  justify-content: flex-start;
+  .isActive {
+    border: 1px solid #565eaa !important;
+  }
+  .showZoneWrap {
+    width: 110px;
+    height: 160px;
+    margin-right: 10px;
+    border: 1px solid #e7e7e7;
+    background: #e7e7e7;
+    position: relative;
+    cursor: pointer;
+
+    img {
+      position: absolute;
+    }
+    .UPPER_LEFT {
+      left: 0;
+      top: 0;
+    }
+    .UPPER_RIGHT {
+      right: 0;
+      top: 0;
+    }
+    .BOTTOM_LEFT {
+      left: 0;
+      bottom: 0;
+    }
+    .BOTTOM_RIGHT {
+      right: 0;
+      bottom: 0;
+    }
+  }
+}
+</style>

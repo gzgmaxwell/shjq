@@ -49,7 +49,7 @@
     <el-dialog
       title="分配"
       :visible.sync="distributionVisible"
-      width="30%"
+      width="400px"
       :close-on-click-modal="false"
     >
       <distribution v-if="distributionVisible" :row="row" />
@@ -58,11 +58,13 @@
 </template>
 
 <script>
+import { assignUser } from "@/api/video-manage/await-examine";
 import distribution from "@/views/video-manage/violationCheck/distribution.vue";
 import { waitAssignPre } from "@/api/video-manage/await-examine.js";
 import search from "@/components/tableSearch/search";
 import tableSearch from "@/components/tableSearch/table";
 import {
+  debounceCallBack,
   videoLength,
   optionsTimeType,
   formatDurationToTime,
@@ -380,16 +382,29 @@ export default {
           name: "分配",
           class: "comBtn link",
           callback: ({ row }) => {
+            this.distributionVisible = true;
             this.row = {
               ...row,
               callback: (data) => {
-                if (data) {
-                  this.getList();
+                if (data && Object.keys(data).length) {
+                  const { id, userId } = data;
+                  const params = {
+                    id,
+                    userId,
+                  };
+                  const comSubmit = () => {
+                    return assignUser(params).then((res) => {
+                      if (res.data.code == 200) {
+                        this.$message.success("分配成功");
+                        this.getList();
+                      }
+                    });
+                  };
+                  debounceCallBack(comSubmit)();
                 }
                 this.distributionVisible = false;
               },
             };
-            this.distributionVisible = true;
           },
         },
       ];

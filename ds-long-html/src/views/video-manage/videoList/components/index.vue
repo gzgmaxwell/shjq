@@ -96,14 +96,6 @@
     >
       <chapterSimple v-if="visibleChapter" :row="row" />
     </el-dialog>
-    <el-dialog
-      title="批量修改作者"
-      :close-on-click-modal="false"
-      :visible.sync="authorsVisible"
-      width="20%"
-    >
-      <comAuthorsEdit v-if="authorsVisible" :row="row" />
-    </el-dialog>
   </div>
 </template>
 
@@ -116,7 +108,6 @@ import search from "@/components/tableSearch/search.vue";
 import tableSearch from "@/components/tableSearch/table.vue";
 import commVideoEdit from "@/views/common/commVideo/commVideoEdit.vue";
 import commVideoCheck from "@/views/common/commVideo/commVideoCheck.vue";
-import comAuthorsEdit from "@/views/common/commVideo/comAuthorsEdit.vue";
 import dissentingPool from "@/views/video-manage/videoList/components/dissentingPool.vue";
 import chapterSimple from "@/components/chapterSimple/index.vue";
 import {
@@ -144,6 +135,8 @@ import {
   filterNullSearchData,
   enum_paidVideo,
   optPaidVideo,
+  optWatermarkType,
+  EnumWatermarkType,
 } from "@/util/util";
 import { pageHandle } from "@/util/pageHandle";
 export default {
@@ -155,7 +148,6 @@ export default {
     commVideoCheck,
     dissentingPool,
     chapterSimple,
-    comAuthorsEdit,
   },
   props: {
     webPageMenu: {
@@ -179,7 +171,6 @@ export default {
       checkVisible: false,
       dissentingPoolVisible: false,
       visibleChapter: false,
-      authorsVisible: false,
       row: {},
       rowChapter: {},
       loading: false,
@@ -244,7 +235,6 @@ export default {
           placeholder: "结束分值20000",
           clearable: true,
         },
-
         {
           styleWidth: "175",
           type: "select",
@@ -278,6 +268,13 @@ export default {
           options: optPaidVideo,
           styleWidth: "120",
           clearable: true,
+        },
+        {
+          type: "select",
+          prop: "manualProcessing",
+          placeholder: "水印处理类型",
+          options: optWatermarkType,
+          styleWidth: "130",
         },
         {
           type: "cascader",
@@ -324,6 +321,7 @@ export default {
           clearable: true,
           show: () => this.webPageMenu === menuEnum.triateralVideoList,
         },
+
         {
           type: "datetimerange",
           prop: "dateTime",
@@ -344,6 +342,7 @@ export default {
         weightScoreLowerLimit: "",
         weightScoreUpperLimit: "",
         paidVideo: "",
+        manualProcessing: "",
       },
       searchHandle: [
         {
@@ -406,31 +405,30 @@ export default {
               return true;
             }
             return this.selectionData.some(
-              (v) => v.channel !== channelEnum.THIRD
+              (v) => v.channel === channelEnum.APP
             );
           },
           callback: () => {
-            this.authorsVisible = true;
-            this.row = {
-              selectionData: this.selectionData,
-              callback: (data) => {
-                if (data) {
-                  batchUpdateByVideoIds({
-                    // onlineIds: [],
-                    preIds: this.selectionData.map((v) => v.preId),
-                    userId: data.createUserId,
-                  }).then(() => {
+            this.$modalPatchAuthors({
+              callback: ({ form, handleClose }) => {
+                batchUpdateByVideoIds({
+                  preIds: this.selectionData.map((v) => v.preId),
+                  userId: form.createUserId,
+                })
+                  .then(() => {
                     this.$message.success("批量修改作者成功");
-                    this.authorsVisible = false;
+                    handleClose();
                     this.getList();
+                  })
+                  .catch(() => {
+                    this.loading = false;
                   });
-                } else {
-                  this.authorsVisible = false;
-                }
               },
-            };
+            });
           },
-          auth: () => this.webPageMenu === menuEnum.triateralVideoList,
+          auth: () =>
+            this.webPageMenu === menuEnum.triateralVideoList ||
+            this.webPageMenu === menuEnum.supplyVideoList,
         },
         {
           label: "批量删除",
@@ -558,6 +556,17 @@ export default {
           type: "filter",
           filter: (row) => {
             const data = optPaidVideo.find((v) => v.id === row.paidVideo);
+            return data?.name;
+          },
+        },
+        {
+          width: "100",
+          label: "水印处理类型",
+          type: "filter",
+          filter: (row) => {
+            const data = optWatermarkType.find(
+              (v) => v.id === row.manualProcessing
+            );
             return data?.name;
           },
         },

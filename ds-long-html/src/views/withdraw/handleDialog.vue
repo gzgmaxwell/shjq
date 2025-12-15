@@ -28,7 +28,7 @@
       <el-form-item v-if="!handleRow.certificateUrl">
         <upload
           bucketType="FILE"
-          accept="*/*"
+          accept=""
           listType="text"
           ref="uploadRef"
           @onChange="onChangeFile"

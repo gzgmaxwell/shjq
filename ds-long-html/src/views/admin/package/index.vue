@@ -17,12 +17,12 @@
     >
     </tableSearch>
     <el-dialog
-      :title="row.id ? '安装包重新生成' : '安装包生成'"
+      title="安装包生成"
       :visible.sync="visible"
       width="50%"
       :close-on-click-modal="false"
     >
-      <create :row="row" v-if="visible" />
+      <tabIndex :row="row" v-if="visible" />
     </el-dialog>
     <el-dialog
       title="查看"
@@ -36,18 +36,30 @@
 </template>
 
 <script>
-import { package_page, package_delete, package_regenerate } from "@/api/admin";
+import {
+  package_page,
+  package_delete,
+  package_regenerate,
+  uploadSign,
+  saveVersionByTenant,
+} from "@/api/admin";
 import { pageHandle } from "@/util/pageHandle";
 import tableSearch from "@/components/tableSearch/table";
 import search from "@/components/tableSearch/search.vue";
-import create from "./component/create.vue";
+import tabIndex from "./component/tabIndex.vue";
 import packegeCheck from "@/views/common/packegeCheck";
-import { optPackage, resetSearchData, EnumPackage } from "@/util/util";
+import {
+  optPackage,
+  EnumPackage,
+  resetSearchData,
+  optAutoPackag,
+  EnumVERSIONTYPE,
+} from "@/util/util";
 export default {
   components: {
     tableSearch,
     search,
-    create,
+    tabIndex,
     packegeCheck,
   },
   data() {
@@ -121,6 +133,14 @@ export default {
       tableData: [],
       tableLabel: [
         {
+          prop: "appName",
+          label: "应用名称",
+        },
+        {
+          prop: "platform",
+          label: "平台",
+        },
+        {
           prop: "versionOfficial",
           label: "版本号",
         },
@@ -132,7 +152,10 @@ export default {
           prop: "appid",
           label: "appid",
         },
-
+        {
+          prop: "styleName",
+          label: "风格",
+        },
         {
           label: "状态",
           type: "filter",
@@ -147,19 +170,51 @@ export default {
           label: "生成时间",
         },
         {
+          label: "是否租户同步",
+          type: "filter",
+          filter: (row) =>
+            optAutoPackag.find((v) => v.id === row.copyTenant)?.name,
+        },
+        {
+          label: "发布状态",
+          type: "filter",
+          filter: (row) =>
+            optAutoPackag.find((v) => v.id === row.publishStatus)?.label,
+        },
+        {
           label: "操作",
           type: "html",
-          width: "180",
+          width: "220",
           html: (row) => {
-            let str = "";
             const reInstallPackage = `<span class='link comBtn' data-tagName="reInstallPackage">重新打包</span>`;
             const del = `<span class='danger comBtn' data-tagName="del">删除</span>`;
             const download = `<span class='link comBtn' data-tagName="download">下载</span>`;
+            const superLink = `<span class='link comBtn' data-tagName="superLink">超级签</span>`;
+            const publish = `<span class='link comBtn' data-tagName="publish">发布版本</span>`;
+            let str = "";
             if (row.status === EnumPackage.FAILED) {
               str += reInstallPackage;
             }
             if (row.status === EnumPackage.SUCCEED) {
               str += download;
+            }
+            if (
+              row.platform === EnumVERSIONTYPE.ios &&
+              row.status === EnumPackage.SUCCEED &&
+              !row.sign
+            ) {
+              str += superLink;
+            }
+            if (
+              (!row.publishStatus &&
+                row.status === EnumPackage.SUCCEED &&
+                row.sign &&
+                row.platform === EnumVERSIONTYPE.ios) ||
+              (!row.publishStatus &&
+                row.status === EnumPackage.SUCCEED &&
+                row.platform === EnumVERSIONTYPE.android)
+            ) {
+              str += publish;
             }
             str += del;
             return str;
@@ -171,9 +226,7 @@ export default {
               },
             } = e;
             if (tagname === "reInstallPackage") {
-              package_regenerate({
-                id: row.id,
-              }).then(() => {
+              package_regenerate({ id: row.id }).then(() => {
                 this.$message.success("正在打包中");
                 this.getList();
               });
@@ -201,6 +254,35 @@ export default {
                 return this.$message.warning("下载地址为空");
               }
               window.location.href = row.packageUrl;
+            } else if (tagname === "superLink") {
+              this.$prompt("请输入URL", "超级签", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                inputValue: row.sign,
+                // inputPattern: /^(?!s*$). +/,
+                inputErrorMessage: "请输入URL",
+              })
+                .then(({ value }) => {
+                  uploadSign({ sign: value, id: row.id }).then(() => {
+                    this.$message.success("保存成功");
+                    this.getList();
+                  });
+                })
+                .catch(() => {});
+            } else if (tagname === "publish") {
+              saveVersionByTenant({
+                versionId: row.versionId,
+                versionFieldId: row.versionFieldId,
+                saasPackageId: row.id,
+                storeUrl: row.sign,
+                busPlatformId: localStorage.getItem("BusPlatformId"),
+                apkBucketName: row.packageBucketName,
+                apkFileName: row.packageFile,
+                packageName: row.packageName,
+              }).then(() => {
+                this.$message.success("发布成功");
+                this.getList();
+              });
             }
           },
         },
@@ -220,9 +302,9 @@ export default {
 
   mounted() {
     this.getList();
-    this.timer = setInterval(() => {
-      this.getList();
-    }, 10000);
+    // this.timer = setInterval(() => {
+    //   this.getList();
+    // }, 10000);
   },
 
   methods: {

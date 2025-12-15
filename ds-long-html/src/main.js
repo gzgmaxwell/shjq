@@ -22,6 +22,15 @@ import * as filters from "./filters"; // 全局filter
 import "./styles/common.scss";
 import basicContainer from "./components/basic-container/main";
 import Router from "vue-router";
+
+import ModalImage from "@/components/modalImage";
+import ModalPreview from "@/components/modalPreview";
+import ModalReject from "@/components/modalReject";
+import ModalPatchAuthors from "@/components/modalPatchAuthors";
+import ModalGraphic from "@/components/modalGraphic";
+import ModalChapter from "@/components/modalChapter";
+
+
 // 解决重复点击路由时报错
 const routerPush = Router.prototype.push;
 Router.prototype.push = function push(location) {
@@ -41,6 +50,12 @@ Vue.prototype.$echarts = echarts;
 Vue.use(router);
 
 Vue.use(AvueFormDesign);
+Vue.use(ModalImage);
+Vue.use(ModalPreview);
+Vue.use(ModalReject);
+Vue.use(ModalPatchAuthors);
+Vue.use(ModalGraphic);
+Vue.use(ModalChapter);
 
 // 注册全局容器
 Vue.component("basicContainer", basicContainer);

@@ -38,7 +38,14 @@
 </template>
 
 <script>
-import { optionStatus, EnumStatus, debounceCallBack } from "@/util/util";
+import {
+  optionStatus,
+  EnumStatus,
+  debounceCallBack,
+  filterNullSearchData,
+  resetSearchData,
+  EnumBusPlatformId,
+} from "@/util/util";
 import addBackendTags from "@/views/content/classify/component/addBackendTags.vue";
 import {
   getVideoCount,
@@ -58,6 +65,8 @@ export default {
   },
   data() {
     return {
+      //平台id
+      platFormId: "",
       loading: false,
       visible: false,
       // in8nVisible: false,
@@ -99,7 +108,7 @@ export default {
               },
             };
           },
-          auth: () => this.permissions.classify_add,
+          auth: () => this.permissions.classify_web_add,
         },
       ],
       tableData: [],
@@ -114,6 +123,9 @@ export default {
         {
           prop: "createUserName",
           label: "创建人",
+          show: () => {
+            return this.platFormId == EnumBusPlatformId.platForm_id;
+          },
         },
         {
           prop: "createTime",
@@ -124,6 +136,9 @@ export default {
           type: "slot",
           slotName: "slotBtn",
           width: "100",
+          show: () => {
+            return this.platFormId == EnumBusPlatformId.platForm_id;
+          },
         },
       ],
       tablePage: {
@@ -148,13 +163,14 @@ export default {
     },
   },
   mounted() {
+    this.platFormId = localStorage.getItem("BusPlatformId");
     this.getList();
   },
 
   methods: {
     getList() {
       const params = {
-        ...this.searchData,
+        ...filterNullSearchData(this.searchData),
         current: this.tablePage.current,
         size: this.tablePage.size,
       };
@@ -178,7 +194,7 @@ export default {
     getBtnList(row) {
       const btnList = [];
       const str = row.classifyStatus == EnumStatus.OFF ? "btnDisable" : "";
-      if (this.permissions?.classify_edit) {
+      if (this.permissions?.classify_web_edit) {
         btnList.push({
           name: "编辑",
           class: "comBtn link",
@@ -198,7 +214,7 @@ export default {
         });
       }
 
-      if (this.permissions?.classify_del) {
+      if (this.permissions?.classify_web_del) {
         btnList.push({
           name: "删除",
           class: "comBtn danger",
@@ -236,7 +252,7 @@ export default {
       this.getList();
     },
     reset() {
-      this.searchData.classifyName = "";
+      resetSearchData(this.searchData);
       this.tablePage.total = 0;
       this.tablePage.current = 1;
       this.tablePage.size = 10;

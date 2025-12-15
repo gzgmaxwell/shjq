@@ -168,14 +168,6 @@
       <watchAuth v-if="watchVisible" :row="row" />
     </el-dialog> -->
     <el-dialog
-      title="批量修改作者"
-      :close-on-click-modal="false"
-      :visible.sync="authorsVisible"
-      width="20%"
-    >
-      <comAuthorsEdit v-if="authorsVisible" :row="row" />
-    </el-dialog>
-    <el-dialog
       title="修改价格"
       :visible.sync="priceVisible"
       width="30%"
@@ -189,7 +181,6 @@
 import commVideoEdit from "@/views/common/commVideo/commVideoEdit.vue";
 import commReject from "@/views/common/commVideo/commReject.vue";
 // import comMakeScore from "@/views/common/commVideo/comMakeScore.vue";
-import comAuthorsEdit from "@/views/common/commVideo/comAuthorsEdit.vue";
 import search from "@/components/tableSearch/search.vue";
 import tableSearch from "@/components/tableSearch/table.vue";
 import chapter from "@/components/chapter/index.vue";
@@ -264,7 +255,6 @@ export default {
     editPrice,
     freeTime,
     // watchAuth,
-    comAuthorsEdit,
   },
   data() {
     return {
@@ -281,7 +271,6 @@ export default {
       editVisible: false,
       resolutionVisible: false,
       priceVisible: false,
-      authorsVisible: false,
       row: {},
       pageFrom: menuEnum.cmsVideoManage,
       tableEvents: {
@@ -339,7 +328,7 @@ export default {
           placeholder: "请选择后台标签",
           clearable: true,
           multiple: true,
-          show: () => this.isManagement(),
+          // show: () => this.isManagement(),
         },
         {
           styleWidth: "180",
@@ -683,29 +672,27 @@ export default {
             if (!this.selectionData.length) return true;
             if (!this.isManagement()) return false;
             return this.selectionData.some(
-              (v) => v.channel !== channelEnum.THIRD
+              (v) => v.channel === channelEnum.APP
             );
           },
           callback: () => {
-            this.authorsVisible = true;
-            this.row = {
-              selectionData: this.selectionData,
-              callback: (data) => {
-                if (data) {
-                  batchUpdateByVideoIds({
-                    onlineIds: this.selectionData.map((v) => v.id),
-                    preIds: this.selectionData.map((v) => v.preId),
-                    userId: data.createUserId,
-                  }).then(() => {
+            this.$modalPatchAuthors({
+              callback: ({ form, handleClose }) => {
+                batchUpdateByVideoIds({
+                  onlineIds: this.selectionData.map((v) => v.id),
+                  preIds: this.selectionData.map((v) => v.preId),
+                  userId: form.createUserId,
+                })
+                  .then(() => {
                     this.$message.success("批量修改作者成功");
-                    this.authorsVisible = false;
+                    handleClose();
                     this.getList();
+                  })
+                  .catch(() => {
+                    this.loading = false;
                   });
-                } else {
-                  this.authorsVisible = false;
-                }
               },
-            };
+            });
           },
         },
         {
@@ -778,7 +765,7 @@ export default {
           type: "slot",
           slotName: "classifyIdWeb",
           width: "220",
-          show: () => this.isManagement(),
+          // show: () => this.isManagement(),
         },
         {
           label: "分辨率",
@@ -819,12 +806,16 @@ export default {
           prop: "watchLevel",
           width: "70",
           label: "观看权限",
-          type: "filter",
-          filter: (row) => {
+          type: "html",
+          html: (row) => {
             const data = optionWatchPermission.find(
               (v) => v.id === row.watchLevel
             );
-            return data?.name || "/";
+            if (row.paidVideo === enum_paidVideo.yes) {
+              return `<span>/</span>`;
+            } else {
+              return `<span>${data?.name || "/"}</span>`;
+            }
           },
         },
         {
@@ -852,13 +843,13 @@ export default {
           prop: "createTime",
           width: "140",
           label: "上传时间",
-          show: () => this.isManagement(),
+          // show: () => this.isManagement(),
         },
         {
           prop: "postTime",
           width: "140",
           label: "上架时间",
-          show: () => this.isManagement(),
+          // show: () => this.isManagement(),
         },
         {
           prop: "failure",

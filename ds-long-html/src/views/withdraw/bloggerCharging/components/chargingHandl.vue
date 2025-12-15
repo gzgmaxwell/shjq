@@ -30,7 +30,7 @@
       <el-form-item v-show="ruleForm.auditType === ENUM_chargingAuditOpra.pass">
         <upload
           bucketType="FILE"
-          accept="*/*"
+          accept=""
           listType="text"
           ref="uploadRef"
           @onChange="onChangeFile"

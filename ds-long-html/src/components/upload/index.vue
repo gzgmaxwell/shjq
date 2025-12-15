@@ -212,6 +212,36 @@ export default {
         };
       },
     },
+    fixedWidthHeight: {
+      type: Object,
+      required: false,
+      default: () => {
+        return {
+          width: 0,
+          height: 0,
+        };
+      },
+    },
+    isFileNameToKey: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    isFilterContent: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    isNumberFileName: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    isEncodingUtf8: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   data() {
     return {
@@ -225,6 +255,7 @@ export default {
       timerS3: null,
       delFileList: [],
       uploadSize: [],
+      fileListOrigin: [],
     };
   },
   mounted() {
@@ -304,7 +335,18 @@ export default {
       }
       return false;
     },
+
     beforeUpload(file, fileList, onExceed) {
+      // if (this.isFilterContent) {
+      //   let reader = new FileReader();
+      //   reader.readAsText(file);
+      //   reader.onload = (event) => {
+      //     const result = event.target.result;
+      //     const str = result.replace(/\s/g, "");
+      //     file.length = str.length;
+      //   };
+      // }
+
       const isMB = file.size / 1024 / 1024;
       if (this.uploadPage === "videoUploadList" && this.videoUploadTip(isMB)) {
         return false;
@@ -312,6 +354,13 @@ export default {
       if (isMB > this.maxFileSize) {
         this.$message.warning(`上传文件不能超过${this.maxFileSize}MB`);
         return false;
+      }
+      if (this.isNumberFileName && file.name) {
+        const name = file.name.substring(0, file.name.indexOf("."));
+        if (Number.isNaN(Number(name))) {
+          this.$message.warning(`文件名必须为数字`);
+          return false;
+        }
       }
       if (this.accept.includes("video")) {
         const arr = ["mp4", "mov", "m4v", "webm", "mkv"];
@@ -335,12 +384,15 @@ export default {
         }
         return this.checkImage(file, onExceed);
       }
-      if (this.accept.includes(".apk,.ipa")) {
-        const packageArray = ["apk", "ipa"];
+      if (this.accept) {
+        const packageArray = this.accept.replaceAll(".", "").split(",");
         const fileExtension = file.name.substr(file.name.lastIndexOf(".") + 1);
         if (!packageArray.includes(fileExtension)) {
           this.$message.warning(`只能上传 ${packageArray} 格式文件`);
           return false;
+        }
+        if (this.isEncodingUtf8 && !fileExtension.includes("epub")) {
+          this.checkUtf8(file);
         }
       }
     },
@@ -467,6 +519,8 @@ export default {
             const { width, height } = img;
             const isW2H = width / height;
             const inRandom = Math.abs(isW2H - this.W2HRate);
+            file.imageWidth = width;
+            file.imageHeight = height;
             if (this.widthHeightLimit.width && this.widthHeightLimit.height) {
               if (
                 this.widthHeightLimit.width > this.widthHeightLimit.height &&
@@ -486,6 +540,18 @@ export default {
               }
             }
 
+            if (this.fixedWidthHeight.width && this.fixedWidthHeight.height) {
+              if (
+                this.fixedWidthHeight.width !== width ||
+                this.fixedWidthHeight.height !== height
+              ) {
+                this.$message.warning(
+                  `请上传宽高为${this.fixedWidthHeight.width} x ${this.fixedWidthHeight.height}像素的文件`
+                );
+                reject(file);
+              }
+            }
+
             if (inRandom > 0.1 && this.W2HRate) {
               this.$message.warning(
                 `请上传宽高比为${this.getOriginWH().width}:${
@@ -500,6 +566,27 @@ export default {
               resolve(file);
             }
           };
+        };
+      });
+    },
+    checkUtf8(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsText(file);
+
+        reader.onloadend = (e) => {
+          const content = e.target.result;
+          if (content.includes("�")) {
+            this.$message.warning(`请上传编码格式为utf-8的文件`);
+            this.clearFiles();
+            reject(file);
+          } else {
+            resolve(file);
+          }
+        };
+        reader.onerror = () => {
+          this.$message.warning("文件内容读取失败，请检查文件是否损坏");
+          reject(file);
         };
       });
     },
@@ -541,6 +628,7 @@ export default {
       }
     },
     fileChangeMultiple(file, fileList) {
+      this.fileListOrigin = fileList;
       if (this.uploadFrom === ENUMS_FROM.multipleVideo) {
         this.file = file;
         const isMB = file.size / 1024 / 1024;
@@ -550,6 +638,8 @@ export default {
         ) {
           return false;
         }
+        this.$emit("onChangeFile", fileList);
+      } else {
         this.$emit("onChangeFile", fileList);
       }
     },
@@ -576,6 +666,11 @@ export default {
       } else {
         comDir = bucketInfo.pictureDir;
       }
+
+      if (this.isFileNameToKey) {
+        comDir = `${comDir}[${file.name}]/`;
+      }
+
       let str = `${comDir}${time}-${random}.${suffix}`;
       return str;
     },
@@ -609,6 +704,10 @@ export default {
                 videoWidth: file?.videoWidth,
                 videoHeight: file?.videoHeight,
                 duration: file?.duration,
+                imageWidth: file?.imageWidth,
+                imageHeight: file?.imageHeight,
+                isUploadFinish: undefined,
+                length: file?.length,
               };
               console.log("upload callback data", item);
               if (typeof callback === "function") {
@@ -628,6 +727,8 @@ export default {
                 this.uploadFileList[0].name = item.name;
                 return this.$emit("onChange", this.uploadFileList);
               }
+              item.isUploadFinish =
+                this.fileListOrigin.length - 1 === this.uploadFileList.length;
               this.uploadFileList.push(item);
               this.$emit("onChange", this.uploadFileList);
             }
@@ -643,6 +744,18 @@ export default {
   watch: {
     fileList: {
       handler(val) {
+        if (this.isFileNameToKey) {
+          let regex = /\[(.+?)\]/g;
+          val.forEach((v) => {
+            if (v.key.includes("[") && v.key.includes("]")) {
+              const name = v.key
+                .match(regex)[0]
+                .replace("[", "")
+                .replace("]", "");
+              v.name = name;
+            }
+          });
+        }
         this.uploadFileList = val;
       },
       deep: true,

@@ -11,7 +11,6 @@
       :tableData="tableData"
       :searchData="searchData"
       :tableLabel="tableLabel"
-      :operation="operation"
       :tablePage="tablePage"
       :isIndex="true"
     >
@@ -57,9 +56,10 @@ import tableSearch from "@/components/tableSearch/table.vue";
 import { mapGetters } from "vuex";
 import {
   showTag,
-  ENUM_DIC_TYPE,
   videoUnmountStatus,
   ENUM_VIDEO_STATUS,
+  resetSearchData,
+  filterNullSearchData,
 } from "@/util/util";
 export default {
   components: {
@@ -73,7 +73,6 @@ export default {
       that: this,
       visible: false,
       row: {},
-      Alloption: [],
       searchForm: [
         {
           type: "input",
@@ -105,15 +104,29 @@ export default {
         },
       ],
       searchData: {
-        createUserId: this.$route.query.id,
         videoTitle: "",
         classifyId: [],
         failure: "",
         dateTime: [],
       },
       searchHandle: [
-        { label: "查询", type: "primary", callback: this.search },
-        { label: "重置", callback: this.reset },
+        {
+          label: "查询",
+          type: "primary",
+          callback: () => {
+            this.tablePage.current = 1;
+            this.getList();
+          },
+        },
+        {
+          label: "重置",
+          callback: () => {
+            resetSearchData(this.searchData);
+            this.tablePage.current = 1;
+            this.tablePage.size = 10;
+            this.getList();
+          },
+        },
       ],
       tableData: [],
 
@@ -188,15 +201,21 @@ export default {
           prop: "accusationCount",
           label: "举报",
         },
-      ],
-      operation: {
-        label: "操作",
-        width: "100",
-        btnList: [
-          {
-            label: "查看",
-            type: "primary",
-            callback: (row) => {
+        {
+          label: "操作",
+          type: "html",
+          width: "80",
+          html: (row) => {
+            const look = `<span class="comBtn link" data-tagName="look">查看</span>`;
+            return look;
+          },
+          callback: (row, index, e) => {
+            const {
+              target: {
+                dataset: { tagname },
+              },
+            } = e;
+            if (tagname === "look") {
               this.visible = true;
               this.row = {
                 ...row,
@@ -204,11 +223,10 @@ export default {
                   this.visible = false;
                 },
               };
-            },
+            }
           },
-        ],
-      },
-
+        },
+      ],
       tablePage: {
         total: 0,
         current: 1,
@@ -223,7 +241,6 @@ export default {
   },
   computed: {
     ...mapGetters({
-      dictionary: "dictionary",
       classifyOptions: "classifyOptions",
     }),
     compOpt() {
@@ -235,7 +252,6 @@ export default {
   },
 
   mounted() {
-    this.Alloption = this.dictionary[ENUM_DIC_TYPE.recommend_level];
     this.getList();
     this.categoryList();
   },
@@ -249,49 +265,31 @@ export default {
       });
     },
     getList() {
-      let startTime = "";
-      let endTime = "";
-      if (this.searchData.dateTime && this.searchData.dateTime.length) {
-        startTime = this.searchData.dateTime[0];
-        endTime = this.searchData.dateTime[1];
-      }
       const params = {
-        ...this.searchData,
-        startTime,
-        endTime,
+        ...filterNullSearchData(this.searchData),
+        createUserId: this.$route.query.id,
         current: this.tablePage.current,
         size: this.tablePage.size,
       };
+      if (this.searchData.dateTime && this.searchData.dateTime.length) {
+        params.startTime = this.searchData.dateTime[0];
+        params.endTime = this.searchData.dateTime[1];
+      }
       this.loading = true;
       getSubstanceDataInfo(params)
         .then((res) => {
           const { data } = res;
           this.loading = false;
-            this.tableData = data.data.records.map((v) => {
-              v.visible = false;
-              v.coverUrl = v?.coverBucketUrl;
-              return v;
-            });
-            this.tablePage.total = data.data.total;
-            this.$emit("getTotal", data.data.total);
+          this.tableData = data.data.records.map((v) => {
+            v.visible = false;
+            v.coverUrl = v?.coverBucketUrl;
+            return v;
+          });
+          this.tablePage.total = data.data.total;
         })
         .catch(() => {
           this.loading = false;
         });
-    },
-    search() {
-      this.tablePage.current = 1;
-      this.getList();
-    },
-    reset() {
-      this.searchData.videoTitle = "";
-      this.searchData.dateTime = [];
-      this.searchData.classifyId = "";
-      this.searchData.failure = "";
-      this.tablePage.total = 0;
-      this.tablePage.current = 1;
-      this.tablePage.size = 10;
-      this.getList();
     },
   },
 };

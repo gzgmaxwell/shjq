@@ -33,7 +33,7 @@
         <el-form-item label="是否违规:" prop="illegal">
           <el-radio-group
             v-model="ruleForm.violated"
-            :disabled="propSelVidData.handleResult"
+            :disabled="propSelVidData.handleResult !== null"
             @change="handleIllegalChange"
           >
             <el-radio
@@ -52,7 +52,7 @@
           <el-select
             v-model="ruleForm.handleClassifyId"
             style="width: 100%"
-            :disabled="propSelVidData.handleResult"
+            :disabled="propSelVidData.handleResult !== null"
             clearable
           >
             <template v-for="item in refuseReason">
@@ -71,7 +71,7 @@
         >
           <el-input
             class="textareaInput"
-            :disabled="propSelVidData.handleResult"
+            :disabled="propSelVidData.handleResult !== null"
             type="textarea"
             v-model="ruleForm.handleContent"
             placeholder="请输入违规内容"

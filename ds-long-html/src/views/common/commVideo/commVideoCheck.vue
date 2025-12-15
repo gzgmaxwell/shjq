@@ -126,27 +126,6 @@
             ></el-input>
           </el-form-item>
         </el-col>
-        <!--      4.4.8需求隐藏   <el-col :span="12" v-if="showFreeTime(form.watchLevel)">
-          <el-form-item label="免费时长">
-            <el-input-number
-              style="width: 208px"
-              placeholder="免费时长"
-              disabled
-              v-model="form.freeViewRatio"
-            ></el-input-number>
-            <span class="ml10">%</span>
-          </el-form-item>
-        </el-col> -->
-        <!--     4.4.8需求隐藏    <el-col :span="12" v-if="comPrice(form.watchLevel)">
-          <el-form-item label="金币个数" prop="price">
-            <el-input-number
-              disabled
-              style="width: 208px"
-              placeholder="金币数（个）"
-              v-model="form.price"
-            ></el-input-number>
-          </el-form-item>
-        </el-col> -->
         <el-col :span="12">
           <el-form-item label="是否收费">
             <el-select
@@ -201,41 +180,6 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="视频下载权限" prop="download">
-            <el-select
-              disabled
-              v-model="form.download"
-              placeholder="请选择视频下载权限"
-              clearable
-            >
-              <el-option
-                v-for="item in optionsDownload"
-                :key="item.id"
-                :value="item.id"
-                :label="item.name"
-              >
-              </el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-
-        <!--   4.4.9去除视频评分   <el-col :span="12" v-if="!this.API_URL && form.firstScoring">
-          <el-form-item label="视频评分">
-            <el-input-number
-              style="width: 208px"
-              placeholder="视频评分"
-              disabled
-              :min="1"
-              :precision="1"
-              :step="0.5"
-              :max="10"
-              v-model="form.firstScoring"
-            ></el-input-number>
-            <span class="ml10">分</span>
-          </el-form-item>
-        </el-col> -->
-
         <el-col :span="12">
           <el-form-item label="后台标签">
             <el-select
@@ -311,7 +255,6 @@
 </template>
 
 <script>
-import { classifyDefault } from "@/api/admin/index";
 import { dsUserList } from "@/api/userList";
 import { ListByTopicName } from "@/api/marketing/topsearch";
 import sidVideoPlayer from "@/components/video-player";
@@ -320,19 +263,11 @@ import {
   enum_status,
   ENUM_DIC_TYPE,
   optionWatchPermission,
-  ENUM_WATCH_PERMISSION,
   optPaidVideo,
   enum_paidVideo,
-  optionsDownload,
   channelEnum,
 } from "@/util/util";
 import { mapGetters } from "vuex";
-
-const enum_authority = {
-  charge: "charge",
-  vip: "vip",
-  free: "free",
-};
 export default {
   components: {
     sidVideoPlayer,
@@ -357,7 +292,6 @@ export default {
   },
   data() {
     return {
-      optionsDownload: optionsDownload,
       optionAuthor: [],
       optionTopic: [],
       optionAuthority: optionWatchPermission,
@@ -374,7 +308,6 @@ export default {
         paidVideo: "",
         price: "",
         classifyId: [],
-        download: "",
         topicIds: [],
         freeViewRatio: "",
         classifyIdWeb: [],
@@ -474,16 +407,6 @@ export default {
         return true;
       };
     },
-    /* 4.4.8需求隐藏    showFreeTime() {
-      return (watchLevel) => {
-        const arr = [ENUM_WATCH_PERMISSION.svip, ENUM_WATCH_PERMISSION.charge];
-        if (arr.includes(watchLevel)) {
-          return true;
-        } else {
-          return false;
-        }
-      };
-    }, */
     compThreeAuthors() {
       return () => {
         if (
@@ -506,16 +429,10 @@ export default {
   mounted() {
     this.optionClassify = this.classifyOptions || [];
     this.downloading = this.dictionary[ENUM_DIC_TYPE.download_power];
-    this.getClassifyDefault();
     this.handleSearch();
+    this.getInfo();
   },
   methods: {
-    getClassifyDefault() {
-      classifyDefault().then((res) => {
-        this.classifyDefaultArray = res.data?.data || [];
-        this.getInfo();
-      });
-    },
     async getAuthorName() {
       let { data: res } = await dsUserList({
         current: 1,
@@ -541,8 +458,6 @@ export default {
       let classifyIdArr;
       if (this.row.classifyId) {
         classifyIdArr = this.row.classifyId?.split(",");
-      } else {
-        classifyIdArr = this.classifyDefaultArray.map((item) => item.id);
       }
       this.fileList = [
         {
@@ -552,7 +467,6 @@ export default {
         },
       ];
       const topicIds = this.row.topicVoList?.map((v) => v.id) || [];
-
       this.form.videoTitle = this.row.videoTitle;
       this.form.videoIntroduce = this.row.videoIntroduce;
       this.form.createUserId = this.row.createUserId;
@@ -561,11 +475,9 @@ export default {
       this.form.paidVideo = this.row.paidVideo;
       this.form.price = this.row.price;
       this.form.classifyId = classifyIdArr;
-      this.form.download = this.row.download;
       this.form.channel = this.row.channel;
       this.form.topicIds = topicIds;
       this.form.freeViewRatio = this.row.freeViewRatio;
-      // this.form.firstScoring = this.row.firstScoring;
       this.form.classifyIdWeb = this.row.classifyIdWeb?.split(",") || [];
       this.getAuthorName();
       this.form.thirdUserName = this.row.thirdUserName;

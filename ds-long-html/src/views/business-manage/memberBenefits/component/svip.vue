@@ -88,7 +88,7 @@
         v-model="ruleForm.offlineDownloadLimit"
       />
     </el-form-item>
-    <el-divider></el-divider>
+    <!-- <el-divider></el-divider>
     <div>
       <div class="titleBox">
         <div class="title">
@@ -126,7 +126,7 @@
         <div class="hudongBox">
           <el-switch v-model="ruleForm.isDanmuEnabled"></el-switch>
         </div>
-      </el-form-item>
+      </el-form-item> -->
       <!-- <el-divider></el-divider> -->
       <!-- <el-form-item label-width="260px">
         <div slot="label">

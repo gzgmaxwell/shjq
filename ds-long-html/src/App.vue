@@ -38,6 +38,16 @@ export default {
       },
     };
   },
+  mounted() {
+    if (this.$store.getters.access_token) {
+      //页面刷新，重新获数据
+      this.$store.dispatch("actionDictionary");
+      this.$store.dispatch("actionClassify"); // app 标签
+      this.$store.dispatch("getLevel");
+      this.$store.dispatch("actionAdminTag"); // 后台标签
+      this.$store.dispatch("actionDepartment");
+    }
+  },
   computed: {
     ...mapGetters({
       userInfo: "userInfo",

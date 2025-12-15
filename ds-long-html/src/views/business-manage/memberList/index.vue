@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import { userVipInfo, createParams } from "@/util/util";
+import { userVipInfo, filterNullSearchData } from "@/util/util";
 import pagination from "@/components/bas-pagination/index";
 import {
   userVipVipUserPage,
@@ -153,24 +153,16 @@ export default {
       });
     },
     getList() {
-      let startTime = "";
-      let endTime = "";
-      if (this.searchData.dateTime && this.searchData.dateTime.length) {
-        startTime = this.searchData.dateTime[0];
-        endTime = this.searchData.dateTime[1];
-      }
-
       const params = {
-        ...createParams({
-          ...this.searchData,
-          startTime,
-          endTime,
-        }),
+        ...filterNullSearchData(this.searchData),
         current: this.tablePage.current,
         size: this.tablePage.size,
       };
-      delete params.dateTime;
-      console.log(params);
+      if (params.dateTime && params.dateTime.length) {
+        params.startTime = this.searchData.dateTime[0];
+        params.endTime = this.searchData.dateTime[1];
+        delete params.dateTime;
+      }
       this.loading = true;
       userVipVipUserPage(params)
         .then((res) => {

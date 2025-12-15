@@ -19,11 +19,15 @@
   </div>
 </template>
 <script>
-import { ENUM_COMMENTS_STATUS, commentsStatus } from "@/util/util";
+import {
+  ENUM_COMMENTS_STATUS,
+  commentsStatus,
+  filterNullSearchData,
+} from "@/util/util";
 import search from "@/components/tableSearch/search";
 import tableSearch from "@/components/tableSearch/table";
 import { getMyDmTabData } from "@/api/video-manage/my-audit-record.js";
-import { optVideoStyle, resetSearchData } from "@/util/util";
+import { resetSearchData } from "@/util/util";
 
 export default {
   components: {
@@ -43,18 +47,9 @@ export default {
           placeholder: "请输入视频标题",
           clearable: true,
         },
-        {
-          type: "select",
-          prop: "videoSiftType",
-          placeholder: "视频样式",
-          options: optVideoStyle,
-          styleWidth: "120",
-          clearable: true,
-        },
       ],
       searchData: {
         videoTitle: "",
-        videoSiftType: "",
       },
       searchHandle: [
         {
@@ -68,8 +63,7 @@ export default {
         {
           label: "重置",
           callback: () => {
-            this.searchData.videoTitle = "";
-            this.tablePage.total = 0;
+            resetSearchData(this.searchData);
             this.tablePage.current = 1;
             this.tablePage.size = 10;
             this.getList();
@@ -85,7 +79,7 @@ export default {
         },
         {
           prop: "videoTitle",
-          label: "视频来源",
+          label: "视频标题",
         },
 
         {
@@ -144,7 +138,7 @@ export default {
   methods: {
     getList() {
       const params = {
-        ...this.searchData,
+        ...filterNullSearchData(this.searchData),
         current: this.tablePage.current,
         size: this.tablePage.size,
       };

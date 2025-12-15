@@ -24,7 +24,7 @@
       >
         <el-option
           v-for="item in optRefuseReason"
-          :key="item.refuseCode"
+          :key="item.id"
           :label="item.refuseReason"
           :value="item.refuseCode"
         >
@@ -51,7 +51,7 @@
         >
           <el-option
             v-for="item in optRefuseReason"
-            :key="item.refuseCode"
+            :key="item.id"
             :label="item.refuseReason"
             :value="item.refuseCode"
           >
@@ -73,13 +73,6 @@
         show-word-limit
       ></el-input>
     </el-form-item>
-    <!-- <el-form-item label="违规内容时段:" prop="text">
-      <el-input
-        v-model="ruleForm.text"
-        style="width: 215px"
-        placeholder="请输入内容违规时段"
-      ></el-input>
-    </el-form-item> -->
     <el-form-item>
       <el-button
         type="primary"
@@ -177,7 +170,6 @@ export default {
       this.gitOpt();
     },
     selectRegionChange(val) {
-      console.log(val);
       if (val != "OTHER") {
         this.ruleForm.refuseDesc = "";
       }

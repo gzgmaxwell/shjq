@@ -184,7 +184,9 @@ const user = {
           //   return arr;
           // };
           // fun(list, routeList);
-          let menu = list.filter((v) => routeList.find((m) => m.path === v.path));
+          let menu = list.filter((v) =>
+            routeList.find((m) => m.path === v.path)
+          );
           // console.log("routeList=",routeList);
           // window.routeList = routeList
           // window.list = list

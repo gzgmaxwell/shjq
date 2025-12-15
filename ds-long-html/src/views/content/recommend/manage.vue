@@ -72,27 +72,6 @@
             </el-tooltip>
           </div>
         </template>
-        <!-- 1.31需求隐藏 -->
-        <!-- <template #topic="{ row }">
-          <div>
-            <el-tooltip
-              :content="
-                row.labelDtoList
-                  ? row.labelDtoList.map((item) => item.labelName).join(' ')
-                  : ''
-              "
-              placement="top"
-            >
-              <div class="clamp3">
-                <template v-for="(item, index) in row.labelDtoList">
-                  <el-tag :key="index" style="margin: 2px">{{
-                    item.labelName
-                  }}</el-tag>
-                </template>
-              </div>
-            </el-tooltip>
-          </div>
-        </template> -->
       </tableSearch>
       <el-dialog
         title="新增"
@@ -103,6 +82,15 @@
       >
         <redactdialog :row="row"></redactdialog>
       </el-dialog>
+      <el-dialog
+        title="展示样式"
+        :visible.sync="displayStyleVisible"
+        width="30%"
+        v-if="displayStyleVisible"
+        :close-on-click-modal="false"
+      >
+        <displayStyle :row="row"></displayStyle>
+      </el-dialog>
     </basic-container>
   </div>
 </template>
@@ -110,6 +98,7 @@
 <script>
 import { pageHandle } from "@/util/pageHandle";
 import redactdialog from "./component/redactdialog.vue";
+import displayStyle from "./component/displayStyle.vue";
 import search from "@/components/tableSearch/search.vue";
 import tableSearch from "@/components/tableSearch/table.vue";
 import {
@@ -121,6 +110,9 @@ import {
   resetSearchData,
   videoViolation,
   optPaidVideo,
+  EnumBusPlatformId,
+  optionsShowStyle,
+  EnumShowStyle,
 } from "@/util/util";
 import {
   recordPage,
@@ -135,13 +127,19 @@ export default {
     tableSearch,
     search,
     redactdialog,
+    displayStyle,
   },
   data() {
     return {
+      optionsShowStyle: optionsShowStyle,
+      ruleForm: {
+        type: EnumShowStyle.DEFAULT,
+      },
       selectionData: [],
       loading: false,
       row: {},
       addVisible: false,
+      displayStyleVisible: false,
       sortData: { prop: "weight", order: SORT_TYPE_ENUM.DESCENDING },
       tableEvents: {
         selectionChange: (val) => {
@@ -248,6 +246,19 @@ export default {
             };
           },
         },
+        {
+          label: "展示样式",
+          type: "primary",
+          callback: (row) => {
+            this.displayStyleVisible = true;
+            this.row = {
+              ...row,
+              callback: () => {
+                this.displayStyleVisible = false;
+              },
+            };
+          },
+        },
       ],
       tableData: [],
       tableLabel: [
@@ -285,12 +296,6 @@ export default {
           prop: "createTime",
           label: "上传时间",
         },
-        // {
-        //   label: "话题",
-        //   type: "slot",
-        //   slotName: "topic",
-        //   // width: "165",
-        // },
         {
           label: "APP标签",
           type: "slot",

@@ -63,22 +63,14 @@
     >
       <waterMark v-if="visible" :row="row" />
     </el-dialog>
-    <el-dialog
+    <!-- <el-dialog
       title="上传水印"
       :visible.sync="uploadVisible"
       width="700px"
       :close-on-click-modal="false"
     >
       <upload v-if="uploadVisible" :row="row" />
-    </el-dialog>
-    <el-dialog
-      title="批量修改作者"
-      :close-on-click-modal="false"
-      :visible.sync="authorsVisible"
-      width="20%"
-    >
-      <comAuthorsEdit v-if="authorsVisible" :row="row" />
-    </el-dialog>
+    </el-dialog> -->
     <el-dialog
       title="切片优先级"
       :close-on-click-modal="false"
@@ -99,7 +91,6 @@ import {
 import { getAllVideoGatherChannelList, sourceList } from "@/api/content/index";
 import search from "@/components/tableSearch/search";
 import tableSearch from "@/components/tableSearch/table";
-import comAuthorsEdit from "@/views/common/commVideo/comAuthorsEdit.vue";
 import waterMark from "@/components/water-mark";
 import waterMarkApp from "@/components/water-mark-app";
 import slicePriority from "./slicePriority.vue";
@@ -123,9 +114,11 @@ import {
   filterNullSearchData,
   enum_paidVideo,
   optPaidVideo,
+  optWatermarkType,
+  EnumWatermarkType,
 } from "@/util/util";
 import { pageHandle } from "@/util/pageHandle";
-import upload from "./upload.vue";
+// import upload from "./upload.vue";
 import { mapGetters } from "vuex";
 
 export default {
@@ -133,9 +126,8 @@ export default {
     tableSearch,
     search,
     waterMark,
-    upload,
+    // upload,
     waterMarkApp,
-    comAuthorsEdit,
     slicePriority,
   },
 
@@ -149,7 +141,6 @@ export default {
       selectionData: [],
       visible: false,
       uploadVisible: false,
-      authorsVisible: false,
       priorityVisible: false,
       row: {},
       priorityData: {},
@@ -286,6 +277,13 @@ export default {
           clearable: true,
         },
         {
+          type: "select",
+          prop: "manualProcessing",
+          placeholder: "水印处理类型",
+          options: optWatermarkType,
+          styleWidth: "130",
+        },
+        {
           label: "权重分值",
           type: "input",
           prop: "weightScoreLowerLimit",
@@ -314,6 +312,7 @@ export default {
         weightScoreLowerLimit: "",
         weightScoreUpperLimit: "",
         paidVideo: "",
+        manualProcessing: "",
       },
       searchHandle: [
         {
@@ -336,22 +335,22 @@ export default {
           },
           auth: () => this.permissions.vm_wml_reset,
         },
-        {
-          label: "上传水印",
-          type: "primary",
-          callback: () => {
-            this.uploadVisible = true;
-            this.row = {
-              callback: (data) => {
-                if (data) {
-                  return (this.uploadVisible = false);
-                }
-                this.uploadVisible = false;
-              },
-            };
-          },
-          auth: () => this.permissions.vm_wml_upload_wm,
-        },
+        // {
+        //   label: "上传水印",
+        //   type: "primary",
+        //   callback: () => {
+        //     this.uploadVisible = true;
+        //     this.row = {
+        //       callback: (data) => {
+        //         if (data) {
+        //           return (this.uploadVisible = false);
+        //         }
+        //         this.uploadVisible = false;
+        //       },
+        //     };
+        //   },
+        //   auth: () => this.permissions.vm_wml_upload_wm,
+        // },
         {
           label: "修改作者",
           type: "primary",
@@ -360,29 +359,26 @@ export default {
               return true;
             }
             return this.selectionData.some(
-              (v) => v.channel !== channelEnum.THIRD
+              (v) => v.channel === channelEnum.APP
             );
           },
           callback: () => {
-            this.authorsVisible = true;
-            this.row = {
-              selectionData: this.selectionData,
-              callback: (data) => {
-                if (data) {
-                  batchUpdateByVideoIds({
-                    // onlineIds: [],
-                    preIds: this.selectionData.map((v) => v.preId),
-                    userId: data.createUserId,
-                  }).then(() => {
+            this.$modalPatchAuthors({
+              callback: ({ form, handleClose }) => {
+                batchUpdateByVideoIds({
+                  preIds: this.selectionData.map((v) => v.preId),
+                  userId: form.createUserId,
+                })
+                  .then(() => {
                     this.$message.success("批量修改作者成功");
-                    this.authorsVisible = false;
+                    handleClose();
                     this.getList();
+                  })
+                  .catch(() => {
+                    this.loading = false;
                   });
-                } else {
-                  this.authorsVisible = false;
-                }
               },
-            };
+            });
           },
         },
       ],
@@ -513,6 +509,17 @@ export default {
           filter: (row) => {
             const item = optSliceLevel.find((v) => v.id === row.convertSort);
             return item?.name;
+          },
+        },
+        {
+          width: "100",
+          label: "水印处理类型",
+          type: "filter",
+          filter: (row) => {
+            const data = optWatermarkType.find(
+              (v) => v.id === row.manualProcessing
+            );
+            return data?.name;
           },
         },
         {

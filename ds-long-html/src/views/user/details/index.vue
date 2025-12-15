@@ -10,13 +10,13 @@
             <basicsInfo v-if="activeName === 'first'"></basicsInfo>
           </el-tab-pane>
           <el-tab-pane lazy name="second">
-            <span slot="label">作品信息({{ worksTotal }})</span>
-            <worksInfo
-              @getTotal="getTotal"
-              v-if="activeName === 'second'"
-            ></worksInfo>
+            <span slot="label">视频信息({{ worksTotal }})</span>
+            <worksInfo v-if="activeName === 'second'"></worksInfo>
           </el-tab-pane>
-
+          <el-tab-pane lazy name="comment">
+            <span slot="label">图文信息({{ comicTotal }})</span>
+            <comicInfo v-if="activeName === 'comment'"></comicInfo>
+          </el-tab-pane>
           <el-tab-pane label="金币明细" lazy name="trird">
             <goldDetail v-if="activeName === 'trird'"></goldDetail>
           </el-tab-pane>
@@ -49,8 +49,10 @@
 </template>
 
 <script>
+import { getUserDateCount } from "@/api/userList";
 import basicsInfo from "@/views/user/details/basicsInfo.vue";
 import worksInfo from "@/views/user/details/worksInfo.vue";
+import comicInfo from "@/views/user/details/comicInfo.vue";
 import goldDetail from "@/views/user/details/goldDetail.vue";
 import orderDetails from "@/views/user/details/orderDetails.vue";
 import proxyInfo from "@/views/user/details/proxyInfo.vue";
@@ -59,11 +61,11 @@ import movieCard from "@/views/user/details/movieCard.vue";
 import vipObtain from "@/views/user/details/vipObtain.vue";
 import userHierarchy from "@/views/user/details/userHierarchy.vue";
 import fansData from "@/views/user/details/fansData.vue";
-// import orderDetails from "@/views/user/details/orderDetails.vue";
 export default {
   components: {
     basicsInfo,
     worksInfo,
+    comicInfo,
     goldDetail,
     orderDetails,
     points,
@@ -77,17 +79,20 @@ export default {
     return {
       activeName: "first",
       worksTotal: "",
+      comicTotal: "",
     };
   },
   mounted() {
     this.getTotal();
   },
   methods: {
-    getTotal(val) {
-      this.worksTotal = val || 0;
+    getTotal() {
+      getUserDateCount(this.$route.query.id).then((res) => {
+        this.worksTotal = res.data.data.substanceCount || 0;
+        this.comicTotal = res.data.data.inkLoreCount || 0;
+      });
     },
     goback() {
-      // this.$router.push("/user/userList/index");
       this.$router.go(-1);
     },
   },

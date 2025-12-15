@@ -18,10 +18,10 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button @click="row.callback && row.callback()">取 消</el-button>
         <el-button type="primary" @click="submitForm('ruleForm')"
           >确 定</el-button
         >
+        <el-button @click="row.callback && row.callback()">取 消</el-button>
       </el-form-item>
     </el-form>
   </div>
@@ -29,8 +29,6 @@
 
 <script>
 import { userAll } from "@/api/admin/index";
-import { assignUser } from "@/api/video-manage/await-examine";
-import { debounceCallBack } from "@/util/util";
 export default {
   props: {
     row: {
@@ -67,20 +65,7 @@ export default {
     submitForm(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          const params = {
-            id: this.row.id,
-            ...this.ruleForm,
-          };
-          const comSubmit = () => {
-            return assignUser(params).then((res) => {
-              if (res.data.code == 200) {
-                this.$message.success("分配成功");
-                this.row.callback(true);
-                Promise.resolve();
-              }
-            });
-          };
-          debounceCallBack(comSubmit)();
+          this.row.callback({ id: this.row.id, ...this.ruleForm });
         } else {
           return false;
         }

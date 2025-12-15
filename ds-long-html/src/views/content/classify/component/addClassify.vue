@@ -4,7 +4,7 @@
       :model="ruleForm"
       :rules="rules"
       ref="ruleForm"
-      label-width="100px"
+      label-width="135px"
       class="demo-ruleForm"
     >
       <el-form-item label="标签名称" prop="classifyName">
@@ -14,6 +14,7 @@
           maxlength="20"
           show-word-limit
           clearable
+          :disabled="!isBusPlatform"
         ></el-input>
       </el-form-item>
       <el-form-item label="排序位置" prop="sortValue">
@@ -45,11 +46,11 @@
         </el-radio-group>
       </el-form-item>
       <el-form-item
-        label="展示样式"
+        label="视频标签展示样式"
         prop="type"
         v-if="ruleForm.classifyStatus === EnumStatus.ON"
       >
-        <el-radio-group v-model="ruleForm.type">
+        <el-radio-group v-model="ruleForm.type" :disabled="!isBusPlatform">
           <el-radio
             v-for="item in optionsShowStyle"
             :key="item.id"
@@ -58,39 +59,16 @@
           >
         </el-radio-group>
       </el-form-item>
-
-      <!-- <el-form-item label="排序层级" prop="sort">
-        <el-select
-          v-model="ruleForm.sort"
-          :disabled="row.id || row.pid ? true : false"
-          clearable
-          placeholder="请选择排序层级"
-        >
-          <el-option
-            v-for="item in options"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          >
-          </el-option>
-        </el-select>
-      </el-form-item> -->
-      <!-- <el-form-item
-        label="父级名称"
-        prop="pid"
-        v-if="!row.id && ruleForm.sort == '2'"
-      >
-        <el-select v-model="ruleForm.pid" clearable placeholder="请选择父级">
-          <el-option
-            v-for="item in optlevel"
+      <el-form-item label="超级会员限制" prop="viewingPermissions">
+        <el-radio-group v-model="ruleForm.viewingPermissions">
+          <el-radio
+            v-for="item in optSvipRestrictions"
             :key="item.id"
-            :label="item.classifyName"
-            :value="item.id"
+            :label="item.id"
+            >{{ item.name }}</el-radio
           >
-          </el-option>
-        </el-select>
-      </el-form-item> -->
-
+        </el-radio-group>
+      </el-form-item>
       <el-form-item>
         <el-button @click="row.callback && row.callback()">取消</el-button>
         <el-button type="primary" @click="submitForm('ruleForm')"
@@ -107,8 +85,11 @@ import {
   EnumStatus,
   optionsShowStyle,
   EnumShowStyle,
+  isBusPlatform,
+  optSvipRestrictions,
+  enum_svipRestrictions,
 } from "@/util/util";
-import { document, messagetion, update } from "@/api/content/classify";
+import { document, update } from "@/api/content/classify";
 export default {
   props: {
     row: {
@@ -119,6 +100,8 @@ export default {
   },
   data() {
     return {
+      isBusPlatform: isBusPlatform(),
+      optSvipRestrictions: optSvipRestrictions,
       optionStatus: optionStatus,
       EnumStatus: EnumStatus,
       optionsShowStyle: optionsShowStyle,
@@ -128,17 +111,12 @@ export default {
         classifyDesc: "",
         classifyStatus: EnumStatus.ON,
         type: EnumShowStyle.DEFAULT,
+        viewingPermissions: enum_svipRestrictions.yes,
         sortValue: "",
       },
       rules: {
         classifyName: [
           { required: true, message: "标签名称不能为空", trigger: "blur" },
-          // {
-          //   required: true,
-          //   max: 4,
-          //   message: "最大为4个字符",
-          //   trigger: "blur",
-          // },
         ],
         type: [{ required: true, message: "请选择展示样式", trigger: "blur" }],
         classifyStatus: [
@@ -147,7 +125,9 @@ export default {
         sortValue: [
           { required: true, message: "请选择排序层级", trigger: "blur" },
         ],
-        pid: [{ required: true, message: "请选择父级名称", trigger: "blur" }],
+        viewingPermissions: [
+          { required: true, message: "请选择超级会员限制", trigger: "blur" },
+        ],
       },
     };
   },
@@ -164,19 +144,10 @@ export default {
         type: this.row.type,
         classifyStatus: Number(this.row.classifyStatus),
         sortValue: this.row.sortValue,
+        viewingPermissions: this.row.viewingPermissions,
         id: this.row.id,
       };
     },
-    // 获取父分类下拉数据
-    // Classification() {
-    //   let info = {
-    //     current: 1,
-    //     size: 1000,
-    //   };
-    //   messagetion(info).then((res) => {
-    //     this.optlevel = res.data.data;
-    //   });
-    // },
     submitForm(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {

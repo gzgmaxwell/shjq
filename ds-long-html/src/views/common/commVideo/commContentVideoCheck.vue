@@ -146,7 +146,7 @@
             ></el-input-number>
           </el-form-item>
         </el-col> -->
-        <el-col :span="6">
+        <!--  4.5.4需求隐藏       <el-col :span="6">
           <el-form-item label="视频下载权限:" prop="download">
             <el-select
               disabled
@@ -163,7 +163,7 @@
               </el-option>
             </el-select>
           </el-form-item>
-        </el-col>
+        </el-col> -->
         <el-col :span="6">
           <el-form-item label="视频推荐池:">
             <el-input disabled v-model="form.pool"></el-input>
@@ -250,6 +250,11 @@
             <el-input disabled v-model="form.accusationCount"></el-input>
           </el-form-item>
         </el-col>
+        <el-col :span="6">
+          <el-form-item label="时间戳量:">
+            <el-input disabled v-model="form.timestampCount"></el-input>
+          </el-form-item>
+        </el-col>
       </el-row>
       <h2 style="margin: 0px">规格信息</h2>
       <hr />
@@ -279,7 +284,7 @@
             >
           </el-form-item>
         </el-col>
-        <el-col :span="12" v-if="!isRentVideoCenter()">
+        <el-col :span="12">
           <el-form-item label="后台标签:" prop="classifyId">
             <span
               v-for="(item, index) in form.classifyIdWeb"
@@ -398,19 +403,13 @@ import {
   videoUnmountStatus,
   formatDurationToTime,
   optionsChannelSource,
-  optionsDownload,
+  //4.5.4需求隐藏 optionsDownload,
   channelEnum,
   menuEnum,
   optPaidVideo,
-  enum_paidVideo
+  enum_paidVideo,
 } from "@/util/util";
 import { mapGetters } from "vuex";
-
-const enum_authority = {
-  charge: "charge",
-  vip: "vip",
-  free: "free",
-};
 export default {
   components: {
     sidVideoPlayer,
@@ -435,7 +434,7 @@ export default {
   data() {
     return {
       channelEnum: channelEnum,
-      optionsDownload: optionsDownload,
+      /* 4.5.4需求隐藏 optionsDownload: optionsDownload, */
       videoUnmountStatus: videoUnmountStatus,
       optionsChannelSource: optionsChannelSource,
       optionAuthor: [],
@@ -509,10 +508,14 @@ export default {
       this.comHandleAuthor(this.optionAuthor);
     },
     comHandleAuthor(arr) {
-      const isTrue = arr.some((v) => v.id === this.$route.query.createUserId);
-      if (!isTrue && this.$route.query.createUserId) {
+      const isTrue = arr.some(
+        (v) =>
+          v.id === this.$route.query.createUserId ||
+          v.id === this.$route.query.id
+      );
+      if (!isTrue && (this.$route.query.createUserId || this.$route.query.id)) {
         const v = {
-          id: this.$route.query.createUserId,
+          id: this.$route.query.createUserId || this.$route.query.id,
           nickName: this.$route.query.createUserName,
         };
         this.optionAuthor.push(v);

@@ -71,12 +71,11 @@
       <el-form-item label="昵称:" prop="nickName">
         <el-input
           v-model="ruleForm.nickName"
-          :minlength="2"
-          :maxlength="8"
-          :show-word-limit="true"
           placeholder="请输入昵称"
-          clearable
         ></el-input>
+        <span style="position: absolute; right: 5px">
+          {{ nickNameCharacter }}/30
+        </span>
       </el-form-item>
       <el-form-item label="账号状态:" prop="status">
         <el-radio-group v-model="ruleForm.status" @change="handleStatusChange">
@@ -120,6 +119,7 @@
 </template>
 
 <script>
+import { countMixedChars } from "@/util/util";
 import {
   dsUserSave,
   dsUserUpdate,
@@ -144,6 +144,7 @@ export default {
   },
   data() {
     return {
+      nickNameCharacter: 0,
       restSuccess: "",
       secretKey: "",
       isSubmitting: false,
@@ -185,8 +186,30 @@ export default {
         //   { required: true, message: "请输入账户名称", trigger: "blur" },
         // ],
         nickName: [
-          { min: 2, message: "昵称长度不能少于2个字符", trigger: "blur" },
-          { max: 8, message: "昵称长度不能大于8个字符", trigger: "blur" },
+          {
+            pattern: /^\S+(\s+\S+)*$/,
+            message: "昵称开头或结尾不能有空格",
+            trigger: ["blur", "change"],
+          },
+          {
+            validator: (rule, value, callback) => {
+              if (!value) {
+                this.nickNameCharacter = 0;
+                return callback(new Error("昵称不能为空"));
+              }
+              const charCount = countMixedChars(value);
+              this.nickNameCharacter = charCount;
+              console.log(charCount);
+              if (charCount < 2) {
+                return callback(new Error("昵称至少需要2个字符"));
+              }
+              if (charCount > 30) {
+                return callback(new Error("昵称不能超过30个字符"));
+              }
+              callback();
+            },
+            trigger: "change",
+          },
         ],
         password: [
           {

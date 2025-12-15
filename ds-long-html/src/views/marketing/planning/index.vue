@@ -15,15 +15,24 @@
       :tablePage="tablePage"
       :isIndex="true"
     >
+      <template #activityDescription="{ row }">
+        <el-tooltip
+          :content="row.activityDescription"
+          placement="top"
+          popper-class="pre"
+        >
+          <span class="clamp3 pre">{{ row.activityDescription }}</span>
+        </el-tooltip>
+      </template>
     </tableSearch>
     <el-dialog
       :title="row.id ? '编辑' : '新建'"
       :visible.sync="visible"
       center
-      width="40%"
+      width="700px"
       :close-on-click-modal="false"
     >
-      <create :row="row" v-if="visible"></create>
+      <create :row="row" v-if="visible"> </create>
     </el-dialog>
     <el-dialog
       title="图片预览"
@@ -39,10 +48,7 @@
 </template>
 <script>
 import create from "./component/create.vue";
-import {
-  organization,
-  listdelete,
-} from "@/api/marketing/planning";
+import { organization, listdelete } from "@/api/marketing/planning";
 import revamp from "@/views/Appinventory/mymanage/component/revamp.vue";
 import search from "@/components/tableSearch/search.vue";
 import tableSearch from "@/components/tableSearch/table.vue";
@@ -130,8 +136,11 @@ export default {
           width: "150",
         },
         {
-          prop: "activityDescription",
           label: "活动描述",
+          slotName: "activityDescription",
+          type: "slot",
+          align: "left",
+          headerAlign: "center",
         },
         {
           label: "活动海报",
@@ -155,6 +164,7 @@ export default {
           sortable: true,
         },
         {
+          width: "260",
           label: "活动时间",
           sortable: true,
           type: "html",
@@ -169,13 +179,13 @@ export default {
             const item = activitiesStatus.find(
               (item) => item.id === row.status
             );
-            return `<span>${item?.name ? item.name : ""}</span>`;
+            return `<span >${item?.name ? item.name : ""}</span>`;
           },
         },
         {
           label: "操作",
           type: "html",
-          width: "280",
+          width: "150",
           html: (col) => {
             let edit = `<span data-tagName="editBtn" class="comBtn link">编辑</span>`;
             let fixeBtn = `<span data-tagName="delBtn" class="comBtn danger">删除</span>`;

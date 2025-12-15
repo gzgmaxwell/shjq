@@ -23,6 +23,7 @@
 
       <el-form-item label="活动标题:" prop="activityTilte">
         <el-input
+          style="width: 70%"
           v-model="form.activityTilte"
           placeholder="请输入活动标题"
         ></el-input>
@@ -30,8 +31,11 @@
 
       <el-form-item label="活动描述:" prop="activityDescription">
         <el-input
+          style="width: 70%"
           v-model="form.activityDescription"
           placeholder="请输入活动描述"
+          type="textarea"
+          :autosize="{ minRows: 2, maxRows: 4 }"
         ></el-input>
       </el-form-item>
 

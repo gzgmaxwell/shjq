@@ -1,7 +1,7 @@
 <template>
   <div class="waterMark">
     <div class="leftBox">
-      <div class="imgBox">
+      <!-- <div class="imgBox">
         <div
           class="imgItem"
           v-for="(imgItem, index) in waterMarkImgList"
@@ -14,7 +14,7 @@
             class="imgLoad"
           />
         </div>
-      </div>
+      </div> -->
       <div class="wrap">
         <video ref="video" id="video"></video>
         <div
@@ -38,7 +38,9 @@
       </div>
       <progressVideo :videoClient="videoClient" ref="progressVideo" />
       <div class="btnBox">
-        <el-button type="primary" @click="sureBtn">提交</el-button>
+        <el-button type="primary" @click="sureBtn" :disabled="!this.data.length"
+          >提交</el-button
+        >
         <el-button @click="cancelBtn">无需处理水印</el-button>
       </div>
     </div>
@@ -196,9 +198,9 @@ export default {
       const { data } = res;
       this.origin = data.data;
       this.loadVideo();
-      watermarkCurrent().then((response) => {
-        this.waterMarkImgList = response.data.data;
-      });
+      // watermarkCurrent().then((response) => {
+      //   this.waterMarkImgList = response.data.data;
+      // });
     });
   },
 
@@ -328,7 +330,10 @@ export default {
       const activeDom =
         Array.from(imgLoad).find((v) => v.className.includes("activeImg")) ||
         imgLoad[0];
-      const { naturalWidth, naturalHeight } = activeDom;
+      const { naturalWidth, naturalHeight } = activeDom || {
+        naturalWidth: 80,
+        naturalHeight: 40,
+      };
       console.log(naturalWidth);
       const initWidth = 80;
       const rate = naturalWidth / naturalHeight;

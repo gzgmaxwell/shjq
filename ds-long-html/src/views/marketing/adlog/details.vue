@@ -12,23 +12,33 @@
             {{ compuAdvertFormat(this.details.advertFormat) }}</el-form-item
           >
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="视频/图片：">
-            <div v-if="this.details.adFileUrl">
+        <el-col
+          :span="12"
+          v-if="this.details.adFileUrl || this.details.coverFileUrl"
+        >
+          <el-form-item label="视频/图片(封面)：">
+            <div>
               <img
-                :src="this.details.adFileUrl"
+                :src="this.details.adFileUrl || this.details.coverFileUrl"
                 alt=""
                 width="100"
                 height="50"
               />
             </div>
-            <div v-else>
-              <img
-                :src="this.details.coverFileUrl"
-                alt=""
-                width="100"
-                height="50"
-              />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12" v-if="this.details.videoFileUrl">
+          <el-form-item label="视频：">
+            <div
+              v-if="this.details.videoFileUrl"
+              class="link pointer"
+              @click="
+                () => {
+                  visible = true;
+                }
+              "
+            >
+              查看视频
             </div>
           </el-form-item>
         </el-col>
@@ -65,20 +75,37 @@
         </el-col>
       </el-row>
     </el-form>
+    <el-dialog
+      title="预览"
+      :visible.sync="visible"
+      width="40%"
+      append-to-body
+      center
+      :close-on-click-modal="false"
+    >
+      <sidVideoPlayer
+        :visible="visible"
+        title="视频预览"
+        :single="{
+          videoOriginalFileUrl: this.details.videoFileUrl,
+        }"
+      ></sidVideoPlayer>
+    </el-dialog>
   </basic-container>
 </template>
 
 <script>
 import { advertQueryAdById } from "@/api/marketing/index";
 import { seat } from "@/api/content/advertising";
-import {
-  optionAdvertFormat,
-  optionAdType,
-  optionComStatus,
-} from "@/util/util";
+import { optionAdvertFormat, optionAdType, optionComStatus } from "@/util/util";
+import sidVideoPlayer from "@/components/video-player";
 export default {
+  components: {
+    sidVideoPlayer,
+  },
   data() {
     return {
+      visible: false,
       details: {
         location: "",
       },

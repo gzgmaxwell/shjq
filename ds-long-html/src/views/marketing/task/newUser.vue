@@ -9,18 +9,18 @@
     >
       <div>
         新用户注册福利
-        <el-popover
+        <!-- <el-popover
           placement="top"
           trigger="hover"
           content="新用户注册绑定手机赠送福利，每个账号仅可领取一次"
           class="ml5"
         >
           <span slot="reference" class="el-icon-question question"></span>
-        </el-popover>
+        </el-popover> -->
       </div>
 
       <el-switch
-        v-model="value"
+        v-model="status"
         active-color="#13ce66"
         inactive-color="#ff4949"
         @input="change"
@@ -30,6 +30,29 @@
       </el-switch>
     </div>
     <el-divider></el-divider>
+    <div v-if="status && this.permissions.m_task_bind_phone">
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: -12px;
+        "
+      >
+        <div>需要绑定手机</div>
+
+        <el-switch
+          v-model="bindStatus"
+          active-color="#13ce66"
+          inactive-color="#ff4949"
+          @input="changeBindStatus"
+          :active-value="true"
+          :inactive-value="false"
+        >
+        </el-switch>
+      </div>
+      <el-divider></el-divider>
+    </div>
+
     <tableSearch
       :loading="loading"
       :tableData="tableData"
@@ -42,7 +65,7 @@
           type="text"
           @click="item.callback({ row, index })"
           v-for="item in row.btnList"
-          :disabled="value === 0"
+          :disabled="status === 0"
           :key="item.name"
           >{{ item.name }}</el-button
         >
@@ -102,6 +125,7 @@ import tableSearch from "@/components/tableSearch/table.vue";
 import comIn18n from "@/views/common/commVideo/comIn18n.vue";
 import comWangEditor from "@/views/common/commVideo/comWangEditor.vue";
 import configureRewards from "./components/configureRewards.vue";
+import { mapGetters } from "vuex";
 
 export default {
   components: {
@@ -118,7 +142,8 @@ export default {
       in18nVisible: false,
       editVisible: false,
       row: {},
-      value: 0,
+      status: 0,
+      bindStatus: false,
       searchForm: [],
       searchData: {},
       searchHandle: [],
@@ -148,21 +173,29 @@ export default {
       },
     };
   },
+  computed: {
+    ...mapGetters({
+      permissions: "permissions",
+    }),
+  },
 
   mounted() {
     this.getList();
-    awardGetStatus({
-      type: "USER_BIND_MOBILE",
-    }).then((res) => {
-      this.value = res.data.data;
-    });
   },
 
   methods: {
     change(val) {
-      this.value = val;
       const params = {
         status: val,
+        type: "USER_BIND_MOBILE",
+      };
+      awardUpdate(params).then(() => {
+        this.$message.success("操作成功");
+      });
+    },
+    changeBindStatus(val) {
+      const params = {
+        bindStatus: val,
         type: "USER_BIND_MOBILE",
       };
       awardUpdate(params).then(() => {
@@ -178,6 +211,8 @@ export default {
         .then((res) => {
           this.loading = false;
           const list = [res.data.data];
+          this.bindStatus = res.data.data.bindStatus;
+          this.status = Number(res.data.data.status);
           this.tableData = list.map((v) => {
             v.btnList = this.getBtnList(v);
             return v;

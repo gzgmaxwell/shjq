@@ -34,10 +34,7 @@
 
     <!-- 是否强制更新 -->
     <el-form-item label="是否强制更新" prop="forceUpdate">
-      <el-radio-group
-        v-model="ruleForm.forceUpdate"
-        placeholder="请选择是否强制更新"
-      >
+      <el-radio-group v-model="ruleForm.forceUpdate">
         <el-radio
           v-for="item in optionsVersionUpdate"
           :key="item.id"
@@ -46,6 +43,21 @@
         >
       </el-radio-group>
     </el-form-item>
+    <!-- 强制同步给租户 -->
+    <el-form-item
+      label="强制同步给租户"
+      v-if="permissions.sys_version_synchronousTenant"
+    >
+      <el-radio-group v-model="ruleForm.copyTenant">
+        <el-radio
+          v-for="item in optAutoPackag"
+          :key="item.id"
+          :label="item.id"
+          >{{ item.name }}</el-radio
+        >
+      </el-radio-group>
+    </el-form-item>
+
     <!-- 官方版本号 -->
     <el-form-item label="官方版本号" prop="versionOfficial">
       <el-input
@@ -290,7 +302,10 @@ import {
   optLong,
   EnumVideoTime,
   EnumVERSIONTYPE,
+  optAutoPackag,
+  EnumAutoPackag,
 } from "@/util/util";
+import { mapGetters } from "vuex";
 
 const deviceENUM = { ANDROID: "ANDROID", IOS: "IOS" };
 export default {
@@ -316,6 +331,7 @@ export default {
       bucketEnum: null,
       optionsVersionType: optionsVersionType,
       optionsVersionUpdate: optionsVersionUpdate,
+      optAutoPackag: optAutoPackag,
       fileList: [],
       tagList: [],
       strLen: 0,
@@ -335,6 +351,7 @@ export default {
         online: false,
         platform: deviceENUM.ANDROID,
         forceUpdate: ENUM_VERSIONUPDATE_STATUS.yes,
+        copyTenant: EnumAutoPackag.no,
         pushTime: "",
         updateContent: "",
       },
@@ -363,7 +380,11 @@ export default {
       },
     };
   },
-  computed: {},
+  computed: {
+    ...mapGetters({
+      permissions: "permissions",
+    }),
+  },
   mounted() {
     this.getS3Info();
     if (this.row.id) {
@@ -549,6 +570,7 @@ export default {
         platform: this.row.platform,
         pushTime: this.row.pushTime,
         forceUpdate: this.row.forceUpdate,
+        copyTenant: this.row.copyTenant,
         updateContent: this.row.updateContent,
         id: this.row.id,
         online: this.row.online,
@@ -579,6 +601,7 @@ export default {
         versionOfficial: this.ruleForm.versionOfficial,
         platform: this.ruleForm.platform,
         forceUpdate: this.ruleForm.forceUpdate,
+        copyTenant: this.ruleForm.copyTenant,
         pushTime: this.ruleForm.pushTime,
         updateContent: this.ruleForm.updateContent,
         id: this.ruleForm.id,

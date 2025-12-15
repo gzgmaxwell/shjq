@@ -118,14 +118,6 @@
     >
       <chapterSimple v-if="visibleChapter" :row="row" />
     </el-dialog>
-    <el-dialog
-      title="批量修改作者"
-      :close-on-click-modal="false"
-      :visible.sync="authorsVisible"
-      width="20%"
-    >
-      <comAuthorsEdit v-if="authorsVisible" :row="row" />
-    </el-dialog>
   </div>
 </template>
 
@@ -144,7 +136,6 @@ import search from "@/components/tableSearch/search";
 import tableSearch from "@/components/tableSearch/table";
 import waterMark from "@/components/water-mark";
 import commReject from "@/views/common/commVideo/commReject.vue";
-import comAuthorsEdit from "@/views/common/commVideo/comAuthorsEdit.vue";
 import chapterSimple from "@/components/chapterSimple/index.vue";
 
 import {
@@ -178,7 +169,6 @@ export default {
     commVideoCheck,
     commVideoEdit,
     chapterSimple,
-    comAuthorsEdit,
   },
   data() {
     return {
@@ -187,7 +177,6 @@ export default {
       checkVisible: false,
       editVisible: false,
       visibleChapter: false,
-      authorsVisible: false,
       row: {},
       rowChapter: {},
       selectionData: [],
@@ -375,29 +364,26 @@ export default {
               return true;
             }
             return this.selectionData.some(
-              (v) => v.channel !== channelEnum.THIRD
+              (v) => v.channel === channelEnum.APP
             );
           },
           callback: () => {
-            this.authorsVisible = true;
-            this.row = {
-              selectionData: this.selectionData,
-              callback: (data) => {
-                if (data) {
-                  batchUpdateByVideoIds({
-                    // onlineIds: [],
-                    preIds: this.selectionData.map((v) => v.preId),
-                    userId: data.createUserId,
-                  }).then(() => {
+            this.$modalPatchAuthors({
+              callback: ({ form, handleClose }) => {
+                batchUpdateByVideoIds({
+                  preIds: this.selectionData.map((v) => v.preId),
+                  userId: form.createUserId,
+                })
+                  .then(() => {
                     this.$message.success("批量修改作者成功");
-                    this.authorsVisible = false;
+                    handleClose();
                     this.getList();
+                  })
+                  .catch(() => {
+                    this.loading = false;
                   });
-                } else {
-                  this.authorsVisible = false;
-                }
               },
-            };
+            });
           },
         },
       ],

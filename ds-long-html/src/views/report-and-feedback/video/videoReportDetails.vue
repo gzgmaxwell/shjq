@@ -38,7 +38,7 @@
         <el-form-item label="是否违规:" prop="violated">
           <el-radio-group v-model="row.violated" @change="handleIllegalChange">
             <el-radio
-              :disabled="propSelVidData.handleResult"
+              :disabled="propSelVidData.handleResult !== null"
               v-for="item in videoViolation"
               :key="item.id"
               :label="item.id"
@@ -53,7 +53,7 @@
           prop="handleClassifyId"
         >
           <el-select
-            :disabled="propSelVidData.handleResult"
+            :disabled="propSelVidData.handleResult !== null"
             v-model="row.handleClassifyId"
             style="width: 100%"
             clearable
@@ -74,7 +74,7 @@
         >
           <el-input
             style="width: 100%"
-            :disabled="propSelVidData.handleResult"
+            :disabled="propSelVidData.handleResult !== null"
             class="textareaInput"
             type="textarea"
             v-model="row.handleContent"

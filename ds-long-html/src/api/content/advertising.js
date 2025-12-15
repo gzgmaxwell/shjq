@@ -144,14 +144,20 @@ export function advertLocationGetFixedType(info) {
     data: info,
   });
 }
-// export function add(data) {
-//   return request({
-//     url: "/video/app/minio/uploadSignUrl",
-//     method: "post",
-//     data: data,
+// 批量新建广告
+export function advert_saveBatch(info) {
+  return request({
+    url: "/marketing/web/advert/saveBatch",
+    method: "post",
+    data: info,
+  });
+}
 
-//     // headers: {
-//     //   "Content-Type": "multipart/form-data",
-//     // },
-//   });
-// }
+// 删除广告管理表格数据
+export function advert_sort(info) {
+  return request({
+    url: "/marketing/web/advert/sort",
+    method: "post",
+    data: info,
+  });
+}

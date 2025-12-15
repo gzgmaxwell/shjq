@@ -2,6 +2,7 @@
   <div>
     <slot></slot>
     <el-table
+      @cell-mouse-enter.once="rowDrop"
       :row-class-name="rowClassName"
       :data="tableData"
       :row-key="rowKey"
@@ -80,6 +81,15 @@
               >{{ item.filter(scope.row, scope.$index) }}
             </span>
 
+            <div v-else-if="item.type === 'dragMove'">
+              <img
+                src="@/assets/img/drag.png"
+                class="handle"
+                width="20"
+                height="20"
+              />
+            </div>
+
             <div v-else-if="item.type === 'videoPlay'">
               <div class="videoItem">
                 <img
@@ -117,17 +127,51 @@
                 v-if="scope.row.visible"
               >
                 <div class="videoBox">
-                  <sidVideoPlayer
+                  <videoPlayer
                     :visible="scope.row.visible"
                     title="视频预览"
                     :single="{
                       videoOriginalFileUrl: scope.row.videoOriginalUrl,
                       coverFileUrl: scope.row.coverUrl,
                     }"
-                  ></sidVideoPlayer>
+                  />
                 </div>
               </drag>
             </div>
+
+            <div v-else-if="item.type === 'imgShow'">
+              <div class="videoItem">
+                <img
+                  v-if="scope.row[item.imgUrlkey]"
+                  @click="
+                    (e) => {
+                      item.callback &&
+                        item.callback(scope.row, scope.$index, e);
+                    }
+                  "
+                  :src="scope.row[item.imgUrlkey]"
+                  alt=""
+                  width="78"
+                  height="48"
+                />
+              </div>
+              <el-dialog
+                title="图片预览"
+                :visible.sync="scope.row.visible"
+                width="40%"
+                append-to-body
+                center
+                :close-on-click-modal="true"
+              >
+                <img
+                  width="100%"
+                  height="100%"
+                  :src="scope.row[item.imgUrlkey]"
+                  alt=""
+                />
+              </el-dialog>
+            </div>
+
             <span
               v-else-if="item.type === 'html'"
               v-html="item.html(scope.row, scope.$index)"
@@ -233,14 +277,17 @@
 </template>
 <script>
 import pagination from "@/components/bas-pagination/index.vue";
-import sidVideoPlayer from "@/components/video-player";
+import videoPlayer from "@/components/video-player";
+import easyPlayer from "@/components/easyPlayer";
 import drag from "@/components/drag/index.vue";
+import Sortable from "sortablejs";
 
 export default {
   components: {
     pagination,
     drag,
-    sidVideoPlayer,
+    videoPlayer,
+    easyPlayer,
   },
   props: {
     that: { type: Object, default: this },
@@ -363,6 +410,11 @@ export default {
       required: false,
       default: () => ({}),
     },
+    sortHandleType: {
+      type: Boolean,
+      required: false,
+      default: () => false, // handle   .el-table__row
+    },
   },
   computed: {
     compuShow() {
@@ -403,6 +455,26 @@ export default {
     },
   },
   methods: {
+    rowDrop() {
+      // 行拖拽
+      const _this = this;
+      const tbody2 = this.$refs.table.$el.querySelector(
+        ".el-table__body-wrapper tbody"
+      );
+      Sortable.create(tbody2, {
+        handle: this.sortHandleType ? ".el-table__row" : ".handle",
+        animation: 150,
+        onEnd({ newIndex, oldIndex }) {
+          // 拖拽完成
+          if (_this.tableEvents && _this.tableEvents.dragRowCallBack) {
+            const rowOldIndex = _this.tableData[oldIndex];
+            _this.tableData.splice(oldIndex, 1);
+            _this.tableData.splice(newIndex, 0, rowOldIndex);
+            _this.tableEvents.dragRowCallBack({ tableData: _this.tableData });
+          }
+        },
+      });
+    },
     selectable(row) {
       // return false 禁止
       if (!this.selecKey) {
@@ -468,5 +540,9 @@ export default {
 }
 ::v-deep .el-checkbox:last-of-type {
   margin-right: 0 !important;
+}
+
+.handle {
+  cursor: grab;
 }
 </style>

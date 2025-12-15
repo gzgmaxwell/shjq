@@ -43,23 +43,34 @@
             v-if="activeName === 'videoUnlimitedViewing'"
           ></videoUnlimitedViewing>
         </el-tab-pane>
+        <el-tab-pane
+          label="时间戳奖励配置"
+          lazy
+          name="timestampRewardConfig"
+          v-if="permissions.sys_timestamp_reward_config"
+        >
+          <timestampRewardConfig
+            v-if="activeName === 'timestampRewardConfig'"
+          ></timestampRewardConfig>
+        </el-tab-pane>
       </el-tabs>
     </template>
   </basic-container>
 </template>
 
 <script>
+import { mapGetters } from "vuex";
 import taskDay from "./taskDay.vue";
 import changePool from "./changePool.vue";
 import award from "./award.vue";
 import pointsLogs from "@/views/marketing/task/pointsLogs.vue";
 import movieCardLogs from "@/views/marketing/task/movieCardLogs.vue";
-// import goldDetailLogs from "@/views/marketing/task/goldDetailLogs.vue";
 import vipObtainLogs from "@/views/marketing/task/vipObtainLogs.vue";
 import svipUpperLimit from "@/views/common/videoSetingCofig/svipUpperLimits.vue";
 import videoUnlimitedViewing from "@/views/common/videoSetingCofig/videoUnlimitedViewing.vue";
 import newUser from "./newUser.vue";
 import tasksConfig from "./tasksConfig.vue";
+import timestampRewardConfig from "./timestampRewardConfig.vue";
 export default {
   components: {
     taskDay,
@@ -67,17 +78,20 @@ export default {
     award,
     pointsLogs,
     movieCardLogs,
-    // goldDetailLogs,
     vipObtainLogs,
     newUser,
     tasksConfig,
     svipUpperLimit,
     videoUnlimitedViewing,
+    timestampRewardConfig,
   },
   data() {
     return {
       activeName: "first",
     };
+  },
+  computed: {
+    ...mapGetters(["permissions"]),
   },
 };
 </script>

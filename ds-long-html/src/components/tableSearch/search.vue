@@ -5,6 +5,9 @@
       :inline="true"
       :label-width="labelWidth + 'px'"
       class="demo-ruleForm"
+      :rules="rules"
+      :model="searchData"
+      ref="form"
     >
       <span v-if="searchForm.length">
         <el-form-item
@@ -12,13 +15,17 @@
           :label-width="item.labelWidth || 100 + 'px'"
           v-for="(item, index) in searchForm"
           :key="index"
+          :prop="item.prop"
         >
           <el-input
             class="inputWidth"
             v-if="item.type === 'input' && compuShow(item)"
             v-model="searchData[item.prop]"
             @keyup.enter="handleSearch(item)"
-            @change="item.change && item.change(that, searchData[item.prop])"
+            @change="
+              item.change && item.change({ value: searchData[item.prop] })
+            "
+            @input="item.input && item.input({ value: searchData[item.prop] })"
             :clearable="item.clearable"
             :placeholder="$t(item.placeholder)"
             :style="{ width: item.styleWidth + 'px' }"
@@ -43,8 +50,14 @@
           <el-select
             v-if="item.type === 'select' && compuShow(item)"
             v-model="searchData[item.prop]"
-            @change="item.change && item.change(that, searchData[item.prop])"
-            :remote-method="remoteMethod"
+            @change="
+              item.change && item.change({ value: searchData[item.prop] })
+            "
+            :remote-method="
+              (val) => {
+                item.remoteMethod && item.remoteMethod(val, item);
+              }
+            "
             :remote="item.remote"
             :filterable="item.filterable"
             :reserve-keyword="item.reserveKeyword"
@@ -53,6 +66,10 @@
             :placeholder="$t(item.placeholder)"
             :style="{ width: item.styleWidth + 'px' }"
             @clear="item.clear && item.clear(searchData[item.prop])"
+            @visible-change="
+              (visible) =>
+                item.visibleChange && item.visibleChange(visible, item)
+            "
           >
             <el-option
               v-for="(optionsItem, i) in item.options"
@@ -76,7 +93,9 @@
           <el-date-picker
             v-if="item.type === 'datetimerange' && compuShow(item)"
             v-model="searchData[item.prop]"
-            @change="item.change && item.change(that, searchData[item.prop])"
+            @change="
+              item.change && item.change({ value: searchData[item.prop] })
+            "
             type="datetimerange"
             :value-format="item.valueFormat || 'yyyy-MM-dd HH:mm:ss'"
             range-separator="~"
@@ -88,7 +107,9 @@
           <el-date-picker
             v-if="item.type === 'daterange' && compuShow(item)"
             v-model="searchData[item.prop]"
-            @change="item.change && item.change(that, searchData[item.prop])"
+            @change="
+              item.change && item.change({ value: searchData[item.prop] })
+            "
             type="daterange"
             :value-format="item.valueFormat || 'yyyy-MM-dd HH:mm:ss'"
             :default-time="item.defaultTime || ['00:00:00', '23:59:59']"
@@ -121,7 +142,6 @@
 <script>
 export default {
   props: {
-    that: { type: Object, default: this },
     searchData: {
       type: Object,
       default: () => {},
@@ -155,8 +175,8 @@ export default {
         return 180;
       },
     },
-    remoteMethod: {
-      type: Function,
+    rules: {
+      type: Object,
       required: false,
       default: () => {},
     },

@@ -164,7 +164,7 @@ export default {
   add_time: "添加时间",
   verification_failed: "验证不通过",
   settlement_method: "结算方式",
-  index_title: "后台管理系统 V 4.5.2-11.28",
+  index_title: "后台管理系统 V 4.7.9-12.12",
   exit_full_screen: "退出全屏",
   full_screen: "全屏",
   home_page: "首页",

@@ -80,9 +80,9 @@
           >{{ item.name }}</el-radio
         >
       </el-radio-group>
-      <div class="must" v-if="showVerScreen(ruleForm)">
+      <!-- <div class="must" v-if="showVerScreen(ruleForm)">
         *当前为竖屏广告，为保证用户体验，仅会在短视频（竖版）内容出呈现。
-      </div>
+      </div> -->
     </el-form-item>
 
     <el-form-item label="浮窗类型" v-if="isShowScreenType(ruleForm)">
@@ -108,7 +108,7 @@
       >
         <el-radio
           v-for="item in optionAdvertFormat"
-          :disabled="compuVideo(ruleForm.locationId, item.id)"
+          :disabled="advertFormatDisabled(ruleForm.locationId)"
           :label="item.id"
           :key="item.id"
           >{{ item.name }}</el-radio
@@ -228,7 +228,7 @@
           />
           <span>
             请上传<span v-if="W2HRateOrigin.width"
-              >宽高比为的 {{ W2HRateOrigin.width }} :
+              >宽高比为 {{ W2HRateOrigin.width }} :
               {{ W2HRateOrigin.height }}，</span
             >大小20MB以内，格式为：png，jpg，jpeg，bmp，svg，webp，gif的文件
           </span>
@@ -241,11 +241,7 @@
         <el-popover
           placement="top"
           trigger="hover"
-          :content="
-            computLable()
-              ? ' 该权重越大，该广告越优先显示'
-              : '该权重越大出现几率越高'
-          "
+          :content="computLableContent()"
         >
           <span slot="reference" class="el-icon-question question"></span>
         </el-popover>
@@ -277,7 +273,7 @@
     >
       <el-input-number
         placeholder="请输入进度"
-        :min="1"
+        :min="computMinNum(ruleForm)"
         :max="100"
         :step="1"
         step-strictly
@@ -285,17 +281,13 @@
       />
     </el-form-item>
     <el-form-item label="跳转类型" prop="jumpType">
-      <el-select
-        v-model="ruleForm.jumpType"
-        @change="changeJumpType"
-        :disabled="isDisabledJumpType"
-      >
+      <el-select v-model="ruleForm.jumpType" @change="changeJumpType">
         <el-option
           v-for="item in optJumpType"
           :key="item.id"
           :label="item.name"
           :value="item.id"
-          :disabled="filterJumpType(ruleForm.screenType)"
+          :disabled="filterJumpType(ruleForm, item.id)"
         >
         </el-option>
       </el-select>
@@ -349,6 +341,7 @@
         ></el-button>
       </div>
     </el-form-item>
+
     <el-form-item label="可见人群" prop="limitCrowd">
       <el-radio-group v-model="ruleForm.limitCrowd">
         <el-radio
@@ -375,6 +368,20 @@
       <el-radio-group v-model="ruleForm.status">
         <el-radio
           v-for="item in optionComStatus"
+          :label="item.id"
+          :key="item.id"
+          >{{ item.name }}</el-radio
+        >
+      </el-radio-group>
+    </el-form-item>
+    <el-form-item
+      label="倒计时展示"
+      prop="showExpireTime"
+      v-if="isShowShowExpireTime(ruleForm.locationId)"
+    >
+      <el-radio-group v-model="ruleForm.showExpireTime">
+        <el-radio
+          v-for="item in optShowExpireTime"
           :label="item.id"
           :key="item.id"
           >{{ item.name }}</el-radio
@@ -427,6 +434,8 @@ import {
   EnumAdvertImageSize,
   EnumAdvertFormat,
   optionComStatus,
+  optShowExpireTime,
+  EnumComTrueAndFalse,
   EnumJumpType,
   optionAdScreen,
   Enum_AD_SCREEN,
@@ -436,7 +445,6 @@ import {
   EnumComStatus,
   EnumLocationType,
   optCallbackImme,
-  EnumCallbackImme,
   optVideoRatio,
   EnumVideoRatio,
 } from "@/util/util";
@@ -462,7 +470,6 @@ export default {
   },
   data() {
     return {
-      isDisabledJumpType: false,
       emojiVisible: false,
       videoVisible: false,
       gameVisible: false,
@@ -481,7 +488,6 @@ export default {
       W2HRateImg: 16 / 9,
       W2HRateOrigin: { width: 16, height: 9 },
       ruleForm: {
-        id: "",
         screenType: Enum_AD_SCREEN.full_screen,
         adType: EnumAdType.BANNER,
         advertTitle: "",
@@ -507,12 +513,14 @@ export default {
         videoLayout: EnumVideoRatio.H,
         showProgressRatio: 1,
         videoLength: undefined,
+        showExpireTime: EnumComTrueAndFalse.FASLE,
       },
       optionAdPos: [],
       optionAdScreen: optionAdScreen,
       optionAdType: optionAdType,
       optionAdvertFormat: optionAdvertFormat,
       optionComStatus: optionComStatus,
+      optShowExpireTime: optShowExpireTime,
       optJumpType: optJumpType,
       optCrowdType: optCrowdType,
       optAdvertImageSize: optAdvertImageSize,
@@ -563,6 +571,13 @@ export default {
             trigger: "change",
           },
         ],
+        showExpireTime: [
+          {
+            required: true,
+            message: "倒计时展示",
+            trigger: "change",
+          },
+        ],
         jumptype: [
           {
             required: true,
@@ -590,14 +605,25 @@ export default {
     };
   },
   computed: {
-    compuVideo() {
-      return (data, type) => {
+    advertFormatDisabled() {
+      return (data) => {
         const isDisabledVideo = [
           EnumAdType.APP_LAUNCH_PAGE,
-          EnumAdType.INDEX_PAGE_POP_UPS,
           EnumAdType.VIDEO_DETAIL_AUTHOR_DESC,
           EnumAdType.EVENT_PAGE_VIDEO,
           EnumAdType.EVENT_PAGE_COLLECT,
+          EnumAdType.VIDEO_INSERT_AD,
+          EnumAdType.INDEX_PAGE_POP_UPS,
+          EnumAdType.CHANNEL_PAGE_POP_UPS,
+          EnumAdType.GAME_PAGE_POP_UPS,
+          EnumAdType.MINE_PAGE_POP_UPS,
+          EnumAdType.MSG_PAGE_POP_UPS,
+          EnumAdType.WEAK_NETWORK_AD,
+          EnumAdType.INDEX_PAGE_FLOAT_UPS,
+          EnumAdType.GAME_PAGE_FLOAT_UPS,
+          EnumAdType.CHANNEL_PAGE_FLOAT_UPS,
+          EnumAdType.MSG_PAGE_FLOAT_UPS,
+          EnumAdType.MINE_PAGE_FLOAT_UPS,
         ];
         const isNoDisabled = [
           EnumAdType.VIDEO_DETAIL_PAGE,
@@ -608,39 +634,40 @@ export default {
         }
         const item = this.optionAdPos.find((v) => v.id === data);
         if (!data) return;
-        if (item.fixLocation === EnumAdType.VIDEO_INSERT_AD) {
+
+        if (isNoDisabled.includes(item?.fixLocation)) {
+          return false;
+        }
+
+        if (isDisabledVideo.includes(item?.fixLocation)) {
           return true;
         }
 
-        if (isNoDisabled.includes(item.fixLocation)) {
-          return false;
+        if (item?.location === EnumAdType.VIDEO_FLOW) {
+          return true;
         }
-        if (item.fixLocation === EnumAdType.VIDEO_DETAIL_PAGE) {
-          return false;
-        }
-        if (type === EnumAdvertFormat.PICTURE) {
-          return false;
-        }
-        if (item && item.fixLocation) {
-          if (isDisabledVideo.includes(item.fixLocation)) {
-            return true;
-          }
-        }
-        if (item && item.location) {
-          if (item.location === EnumAdType.VIDEO_FLOW) {
-            return true;
-          }
-        }
+
         return false;
       };
     },
     filterJumpType() {
-      return (data) => {
-        if (data === Enum_AD_SCREEN.full_screen) {
-          return false;
-        } else {
-          return true;
+      return (ruleForm, jumpType) => {
+        const item = this.optionAdPos.find((v) => v.id === ruleForm.locationId);
+        if (item?.fixLocation === EnumAdType.APP_LAUNCH_PAGE) {
+          const arr = [EnumJumpType.NO_JUMP, EnumJumpType.LINK];
+          if (!arr.includes(jumpType)) {
+            return true;
+          }
         }
+        if (item?.fixLocation === EnumAdType.VIDEO_DETAIL_FLOATING_WINDOW) {
+          if (ruleForm.screenType === Enum_AD_SCREEN.half_screen) {
+            const allowed = [EnumJumpType.NO_JUMP, EnumJumpType.ROUTER];
+            if (!allowed.includes(jumpType)) {
+              return true;
+            }
+          }
+        }
+        return false;
       };
     },
     showPath() {
@@ -661,15 +688,66 @@ export default {
         return false;
       };
     },
+    isShowShowExpireTime() {
+      return (locationId) => {
+        const isShow = [
+          EnumAdType.INDEX_PAGE_POP_UPS,
+          EnumAdType.CHANNEL_PAGE_POP_UPS,
+          EnumAdType.MSG_PAGE_POP_UPS,
+          EnumAdType.GAME_PAGE_POP_UPS,
+          EnumAdType.MINE_PAGE_POP_UPS,
+          EnumAdType.INDEX_PAGE_FLOAT_UPS,
+          EnumAdType.VIDEO_DETAIL_FLOATING_WINDOW,
+          EnumAdType.GAME_PAGE_FLOAT_UPS,
+          EnumAdType.CHANNEL_PAGE_FLOAT_UPS,
+          EnumAdType.MSG_PAGE_FLOAT_UPS,
+          EnumAdType.MINE_PAGE_FLOAT_UPS,
+        ];
+        const item = this.optionAdPos.find((v) => v.id === locationId);
+        if (isShow.includes(item?.fixLocation)) {
+          return true;
+        }
+        return false;
+      };
+    },
     computLable() {
       return () => {
         const item = this.optionAdPos.find(
           (v) => v.id === this.ruleForm.locationId
         );
-        if (item?.fixLocation === EnumAdType.INDEX_PAGE_POP_UPS) {
+        const arr = [
+          EnumAdType.INDEX_PAGE_POP_UPS,
+          EnumAdType.CHANNEL_PAGE_POP_UPS,
+          EnumAdType.GAME_PAGE_POP_UPS,
+          EnumAdType.MINE_PAGE_POP_UPS,
+          EnumAdType.MSG_PAGE_POP_UPS,
+        ];
+
+        if (arr.includes(item?.fixLocation)) {
           return true;
         } else {
           return false;
+        }
+      };
+    },
+    computLableContent() {
+      return () => {
+        const item = this.optionAdPos.find(
+          (v) => v.id === this.ruleForm.locationId
+        );
+        const arr = [
+          EnumAdType.INDEX_PAGE_POP_UPS,
+          EnumAdType.CHANNEL_PAGE_POP_UPS,
+          EnumAdType.GAME_PAGE_POP_UPS,
+          EnumAdType.MINE_PAGE_POP_UPS,
+          EnumAdType.MSG_PAGE_POP_UPS,
+        ];
+        if (arr.includes(item?.fixLocation)) {
+          return "该权重越大，该广告越优先显示";
+        } else if (item?.fixLocation === EnumAdType.PORTRAIT_BOTTOM_BANNER) {
+          return "APP根据权重从大到小轮播展示";
+        } else {
+          return "该权重越大出现几率越高";
         }
       };
     },
@@ -763,6 +841,15 @@ export default {
         return false;
       };
     },
+    computMinNum() {
+      return (ruleForm) => {
+        const item = this.optionAdPos.find((v) => v.id === ruleForm.locationId);
+        if (EnumAdType.VIDEO_INSERT_AD === item?.fixLocation) {
+          return 0;
+        }
+        return 1;
+      };
+    },
     is_VIDEO_STOP_AD() {
       return (ruleForm) => {
         const item = this.optionAdPos.find((v) => v.id === ruleForm.locationId);
@@ -785,19 +872,19 @@ export default {
         return false;
       };
     },
-    showVerScreen() {
-      return (ruleForm) => {
-        const item = this.optionAdPos.find((v) => v.id === ruleForm.locationId);
-        if (
-          (item?.fixLocation === EnumAdType.VIDEO_INSERT_AD ||
-            item?.fixLocation === EnumAdType.VIDEO_STOP_AD) &&
-          ruleForm.videoLayout === EnumVideoRatio.V
-        ) {
-          return true;
-        }
-        return false;
-      };
-    },
+    // showVerScreen() {
+    //   return (ruleForm) => {
+    //     const item = this.optionAdPos.find((v) => v.id === ruleForm.locationId);
+    //     if (
+    //       (item?.fixLocation === EnumAdType.VIDEO_INSERT_AD ||
+    //         item?.fixLocation === EnumAdType.VIDEO_STOP_AD) &&
+    //       ruleForm.videoLayout === EnumVideoRatio.V
+    //     ) {
+    //       return true;
+    //     }
+    //     return false;
+    //   };
+    // },
 
     isWidthThanHeight() {
       return (ruleForm) => {
@@ -864,6 +951,12 @@ export default {
 
   methods: {
     emojiCallback(emoji) {
+      const maxLength = 50;
+      if (this.ruleForm.advertContent.length >= maxLength - 1) {
+        this.$message.warning("广告文案不能超过50个字符");
+        this.emojiVisible = false;
+        return;
+      }
       this.ruleForm.advertContent = this.ruleForm.advertContent + emoji;
       this.emojiVisible = false;
     },
@@ -921,19 +1014,28 @@ export default {
       if (!this.optionAdPos.length) return;
       const item = this.optionAdPos.find((v) => v.id === val);
       if (item && item.location && !isGetInfoFun) {
-        if (item.location === EnumAdType.VIDEO_FLOW) {
-          if (item.fixLocation !== EnumAdType.VIDEO_DETAIL_PAGE) {
-            this.ruleForm.advertFormat = EnumAdvertFormat.PICTURE;
-            if (item.fixLocation === EnumAdType.VIDEO_INSERT_AD) {
-              this.ruleForm.advertFormat = EnumAdvertFormat.VIDEO;
-            }
+        if (item?.fixLocation === EnumAdType.VIDEO_INSERT_AD) {
+          this.ruleForm.advertFormat = EnumAdvertFormat.VIDEO;
+          this.ruleForm.showProgressRatio = 0;
+        } else if (EnumAdType.BULLET_AD === item?.fixLocation) {
+          this.ruleForm.showProgressRatio = 1;
+        } else if (
+          item?.fixLocation === EnumAdType.VIDEO_DETAIL_FLOATING_WINDOW
+        ) {
+          this.ruleForm.advertFormat = EnumAdvertFormat.PICTURE;
+          if (this.ruleForm.screenType === Enum_AD_SCREEN.half_screen) {
+            this.ruleForm.jumpType = EnumJumpType.ROUTER;
           }
+        } else if (item.location === EnumAdType.VIDEO_FLOW) {
+          this.ruleForm.advertFormat = EnumAdvertFormat.PICTURE;
+        } else if (item?.fixLocation === EnumAdType.APP_LAUNCH_PAGE) {
+          this.ruleForm.jumpType = EnumJumpType.LINK;
         }
       }
 
       if (
-        item.fixLocation === EnumAdType.VIDEO_INSERT_AD ||
-        item.fixLocation === EnumAdType.VIDEO_STOP_AD
+        item?.fixLocation === EnumAdType.VIDEO_INSERT_AD ||
+        item?.fixLocation === EnumAdType.VIDEO_STOP_AD
       ) {
         if (isGetInfoFun) {
           if (this.row.videoLayout === EnumVideoRatio.H) {
@@ -975,19 +1077,12 @@ export default {
         }
       }
 
-      if (item.fixLocation === EnumAdType.APP_LAUNCH_PAGE) {
-        this.ruleForm.jumpType = EnumJumpType.LINK;
-        this.isDisabledJumpType = true;
-      } else {
-        this.isDisabledJumpType = false;
-      }
-
-      if (item.fixLocation === EnumAdType.VIDEO_INSERT_AD) {
+      if (item?.fixLocation === EnumAdType.VIDEO_INSERT_AD) {
         this.videoTimeRange.min = 1;
         this.videoTimeRange.max = 180;
         this.videoTimeRange_maxFileSize = 100;
       }
-      if (item.fixLocation === EnumAdType.SHORT_VIDEO_FLOW) {
+      if (item?.fixLocation === EnumAdType.SHORT_VIDEO_FLOW) {
         this.videoTimeRange.min = 1;
         this.videoTimeRange.max = 300;
         this.widthHeightLimit.width = 0;
@@ -995,8 +1090,8 @@ export default {
         this.videoTimeRange_maxFileSize = 10000;
       }
       this.handleW2HRateImg(item);
-      this.changeAdvertFormat();
       if (!isGetInfoFun) {
+        this.changeAdvertFormat();
         this.initLocationId();
       }
     },
@@ -1024,21 +1119,39 @@ export default {
         EnumAdType.EVENT_PAGE_VIDEO,
         EnumAdType.EVENT_PAGE_COLLECT,
       ];
+      const isRateOneToOne = [
+        EnumAdType.VIDEO_DETAIL_FLOATING_WINDOW,
+        EnumAdType.INDEX_PAGE_FLOAT_UPS,
+        EnumAdType.GAME_PAGE_FLOAT_UPS,
+        EnumAdType.CHANNEL_PAGE_FLOAT_UPS,
+        EnumAdType.MSG_PAGE_FLOAT_UPS,
+        EnumAdType.MINE_PAGE_FLOAT_UPS,
+      ];
+      const isW2HRateImgZero = [
+        EnumAdType.SHORT_VIDEO_FLOW,
+        EnumAdType.INDEX_PAGE_POP_UPS,
+        EnumAdType.CHANNEL_PAGE_POP_UPS,
+        EnumAdType.GAME_PAGE_POP_UPS,
+        EnumAdType.MINE_PAGE_POP_UPS,
+        EnumAdType.MSG_PAGE_POP_UPS,
+      ];
+      const isW2HRateImgThreeToOne = [EnumAdType.WEAK_NETWORK_AD];
       let width;
       let height;
       if (fixLocation === EnumAdType.APP_LAUNCH_PAGE) {
         width = this.W2HRateOrigin.width = 9;
-        height = this.W2HRateOrigin.height = 16;
+        height = this.W2HRateOrigin.height = 20;
         this.W2HRateImg = width / height;
-      } else if (
-        fixLocation === EnumAdType.INDEX_PAGE_POP_UPS ||
-        fixLocation === EnumAdType.SHORT_VIDEO_FLOW
-      ) {
+      } else if (isW2HRateImgZero.includes(fixLocation)) {
         this.W2HRateOrigin.width = 0;
         this.W2HRateOrigin.height = 0;
         this.W2HRateImg = 0;
-      } else if (fixLocation === EnumAdType.VIDEO_DETAIL_FLOATING_WINDOW) {
+      } else if (isRateOneToOne.includes(fixLocation)) {
         width = this.W2HRateOrigin.width = 1;
+        height = this.W2HRateOrigin.height = 1;
+        this.W2HRateImg = width / height;
+      } else if (isW2HRateImgThreeToOne.includes(fixLocation)) {
+        width = this.W2HRateOrigin.width = 3;
         height = this.W2HRateOrigin.height = 1;
         this.W2HRateImg = width / height;
       } else if (fixLocation === EnumAdType.VIDEO_DETAIL_AUTHOR_DESC) {
@@ -1118,7 +1231,6 @@ export default {
       }
     },
     getInfo() {
-      this.ruleForm.id = this.row.id;
       this.ruleForm.sortWeight = this.row.sortWeight;
       this.ruleForm.advertFormat = this.row.advertFormat;
       this.ruleForm.advertTitle = this.row.advertTitle;
@@ -1140,17 +1252,8 @@ export default {
       this.ruleForm.videoLayout = this.row.videoLayout;
       this.ruleForm.showProgressRatio = this.row.showProgressRatio;
       this.ruleForm.videoLength = this.row.videoLength;
-
-      if (this.row.advertImageSize === EnumAdvertImageSize.SIZE_16_9) {
-        this.widthHeightLimit.width = 10;
-        this.widthHeightLimit.height = 5;
-        this.widthHeightLimit.tip = "请上传宽大于高的文件";
-      } else if (this.row.videoLayout === EnumAdvertImageSize.SIZE_3_4) {
-        this.widthHeightLimit.width = 5;
-        this.widthHeightLimit.height = 10;
-        this.widthHeightLimit.tip = "请上传高大于宽的文件";
-      }
-
+      this.ruleForm.showExpireTime =
+        this.row.showExpireTime || EnumComTrueAndFalse.FASLE;
       if (this.row.coverFileUrl) {
         setTimeout(() => {
           this.ruleForm.coverFileList = [
@@ -1203,7 +1306,7 @@ export default {
         EnumAdType.FIRST_PAGE,
         EnumAdType.BULLET_AD,
       ];
-      if (!isNoVideoOrImageList.includes(item.fixLocation)) {
+      if (!isNoVideoOrImageList.includes(item?.fixLocation)) {
         if (
           this.ruleForm.advertFormat === EnumAdvertFormat.VIDEO &&
           !this.ruleForm.videoName
@@ -1224,7 +1327,7 @@ export default {
         if (
           this.ruleForm.advertFormat === EnumAdvertFormat.VIDEO &&
           !this.ruleForm.coverFileName &&
-          !isNoCheckCoverList.includes(item.fixLocation)
+          !isNoCheckCoverList.includes(item?.fixLocation)
         ) {
           return this.$message.warning("请选择上传视频封面图片");
         }
@@ -1253,27 +1356,8 @@ export default {
 
     commit() {
       const params = {
-        id: this.ruleForm.id,
-        sortWeight: this.ruleForm.sortWeight,
-        advertFormat: this.ruleForm.advertFormat,
-        advertTitle: this.ruleForm.advertTitle,
-        advertContent: this.ruleForm.advertContent,
-        jumpAdress: this.ruleForm.jumpAdress,
-        locationId: this.ruleForm.locationId,
-        jumpType: this.ruleForm.jumpType,
-        status: this.ruleForm.status,
-        coverBucketName: this.ruleForm.coverBucketName,
-        coverFileName: this.ruleForm.coverFileName,
-        videoBucketName: this.ruleForm.videoBucketName,
-        videoName: this.ruleForm.videoName,
-        adFileName: this.ruleForm.adFileName,
-        adBucketName: this.ruleForm.adBucketName,
-        screenType: this.ruleForm.screenType,
-        limitCrowd: this.ruleForm.limitCrowd,
-        advertImageSize: this.ruleForm.advertImageSize,
-        videoLayout: this.ruleForm.videoLayout,
-        showProgressRatio: this.ruleForm.showProgressRatio,
-        videoLength: this.ruleForm.videoLength,
+        ...this.ruleForm,
+        id: this.row.id,
       };
       if (this.ruleForm.dateTime && this.ruleForm.dateTime.length) {
         params.startTime = this.ruleForm.dateTime[0];
@@ -1287,7 +1371,7 @@ export default {
           return this.$message.warning("请添加跳转地址");
         }
       }
-      if (this.ruleForm.id === "") {
+      if (!this.row.id) {
         addition(params).then(() => {
           this.$message.success("新增成功");
           this.row.callback(true);

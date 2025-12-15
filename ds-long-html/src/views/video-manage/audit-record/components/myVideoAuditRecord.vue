@@ -139,7 +139,6 @@ export default {
           label: "重置",
           callback: () => {
             resetSearchData(this.searchData);
-            this.tablePage.total = 0;
             this.tablePage.current = 1;
             this.tablePage.size = 10;
             this.getList();

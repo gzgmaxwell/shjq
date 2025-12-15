@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@babel/plugin-proposal-optional-chaining": "^7.21.0",
+    "@easydarwin/easyplayer": "^5.1.3",
     "@riophae/vue-treeselect": "^0.4.0",
     "@smallwei/avue": "2.8.22",
     "@sscfaith/avue-form-design": "1.3.12",
@@ -24,6 +25,7 @@
     "babel-polyfill": "^6.26.0",
     "classlist-polyfill": "^1.2.0",
     "crypto-js": "^3.1.9-1",
+    "dplayer": "^1.27.1",
     "echarts": "^5.5.0",
     "element-ui": "^2.13.2",
     "hls.js": "^1.4.6",
@@ -32,6 +34,7 @@
     "moment": "^2.29.4",
     "nprogress": "^0.2.0",
     "script-loader": "^0.7.2",
+    "sortablejs": "^1.15.6",
     "tinycolor2": "^1.6.0",
     "videojs-contrib-hls": "^5.15.0",
     "vue": "2.6.10",

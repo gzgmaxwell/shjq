@@ -26,13 +26,14 @@
 <script>
 import {
   filterNullSearchData,
-  optionpoints,
   resetSearchData,
   optionPointsType,
+  optionpoints,
 } from "@/util/util";
 import { recordPage, recordSta } from "@/api/userList";
 import search from "@/components/tableSearch/search";
 import tableSearch from "@/components/tableSearch/table";
+
 export default {
   components: {
     tableSearch,

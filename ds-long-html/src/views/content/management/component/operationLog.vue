@@ -20,7 +20,7 @@
 import { operateRecord } from "@/api/admin/index";
 import search from "@/components/tableSearch/search";
 import tableSearch from "@/components/tableSearch/table.vue";
-import { createParams, optNodes, resetSearchData } from "@/util/util";
+import { filterNullSearchData, optNodes, resetSearchData } from "@/util/util";
 export default {
   components: {
     tableSearch,
@@ -134,9 +134,7 @@ export default {
   methods: {
     getList() {
       const params = {
-        ...createParams({
-          ...this.searchData,
-        }),
+        ...filterNullSearchData(this.searchData),
         preId: this.$route.query.preId,
         size: this.tablePage.size,
         current: this.tablePage.current,

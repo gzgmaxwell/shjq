@@ -1706,12 +1706,35 @@ export function package_record(data) {
     data: data,
   });
 }
-
+//android 安装包生成
 export function package_save(data) {
   return request({
     url: "/marketing/web/saas/package/save",
     method: "post",
     data: data,
+  });
+}
+//ios 安装包配置新增
+export function saveStyleConfig(data) {
+  return request({
+    url: "/marketing/web/package/tenant/saveStyleConfig",
+    method: "post",
+    data: data,
+  });
+}
+//ios 安装包配置修改
+export function updateStyleConfig(data) {
+  return request({
+    url: "/marketing/web/package/tenant/updateStyleConfig",
+    method: "post",
+    data: data,
+  });
+}
+//ios 安装包配置回显
+export function tenantGetInfo(type) {
+  return request({
+    url: "/marketing/web/package/tenant/getInfo/" + type,
+    method: "get",
   });
 }
 export function package_status(data) {
@@ -1809,6 +1832,150 @@ export function videoCardUseStatistics(data) {
 export function updateBatchPrice(data) {
   return request({
     url: "/substance/web/substance-online/updateBatchPrice",
+    method: "post",
+    data: data,
+  });
+}
+
+export function saveVersionStyle(data) {
+  return request({
+    url: "/system/web/system/versionStyle/saveVersionStyle",
+    method: "post",
+    data: data,
+  });
+}
+export function versionStyle_page(data) {
+  return request({
+    url: "/system/web/system/versionStyle/page",
+    method: "post",
+    data: data,
+  });
+}
+
+export function updateVersionStyleStatus(data) {
+  return request({
+    url: "/system/web/system/versionStyle/updateVersionStyleStatus",
+    method: "post",
+    data: data,
+  });
+}
+
+export function updateVersionStyle(data) {
+  return request({
+    url: "/system/web/system/versionStyle/updateVersionStyle",
+    method: "post",
+    data: data,
+  });
+}
+
+export function getTenantByStyleId(data) {
+  return request({
+    url: "/prm/web/tenant/getTenantByStyleId/" + data,
+    method: "get",
+  });
+}
+
+export function saveStylePackageDetail(data) {
+  return request({
+    url: "/system/web/system/stylePackageDetail/saveStylePackageDetail",
+    method: "post",
+    data: data,
+  });
+}
+
+export function stylePackageDetail_page(data) {
+  return request({
+    url: "/system/web/system/stylePackageDetail/page",
+    method: "post",
+    data: data,
+  });
+}
+
+export function againPackage(data) {
+  return request({
+    url: "/system/web/system/stylePackageDetail/againPackage/" + data,
+    method: "get",
+  });
+}
+
+export function uploadSign(data) {
+  return request({
+    url: "/marketing/web/saas/package/uploadSign",
+    method: "post",
+    data: data,
+  });
+}
+
+export function saveVersionByTenant(data) {
+  return request({
+    url: "/system/web/system/version/saveVersionByTenant",
+    method: "post",
+    data: data,
+  });
+}
+
+export function deleteVersionBySaasPackageId(data) {
+  return request({
+    url: "/system/web/system/version/deleteVersionBySaasPackageId/" + data,
+    method: "get",
+  });
+}
+export function updateConfig(data) {
+  return request({
+    url: "/substance/web/RecommendTypeConfig/updateConfig",
+    method: "post",
+    data: data,
+  });
+}
+export function getConfig() {
+  return request({
+    url: "/substance/web/RecommendTypeConfig/getConfig",
+    method: "get",
+  });
+}
+//时间戳奖励配置
+export function timestampList(data) {
+  return request({
+    url: "/marketing/web/timestamp/list",
+    method: "post",
+    data: data,
+  });
+}
+
+export function timestampSave(data) {
+  return request({
+    url: "/marketing/web/timestamp/save",
+    method: "post",
+    data: data,
+  });
+}
+//时间戳视频统计
+export function videoTimestampStatsPage(data) {
+  return request({
+    url: "/substance/web/videoTimestampStats/page",
+    method: "post",
+    data: data,
+  });
+}
+//时间戳视频会员统计
+export function userTimestampStatsPage(data) {
+  return request({
+    url: "/substance/web/userTimestampStats/page",
+    method: "post",
+    data: data,
+  });
+}
+//时间戳统计
+export function timestampStatsPage(data) {
+  return request({
+    url: "/substance/web/timestampStats/page",
+    method: "post",
+    data: data,
+  });
+}
+export function tssetting_saveOrUpdate(data) {
+  return request({
+    url: "/system/web/video/tssetting/saveOrUpdate",
     method: "post",
     data: data,
   });

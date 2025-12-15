@@ -300,7 +300,7 @@ export default {
             } else if (tagname === "details") {
               this.$router.push({
                 path: "/user/details/index",
-                query: { id: row.id },
+                query: { id: row.id, createUserName: row.nickName },
               });
             }
           },

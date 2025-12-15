@@ -4,7 +4,6 @@
       :searchData="searchData"
       :searchForm="searchForm"
       :searchHandle="searchHandle"
-      :remoteMethod="this.remoteMethod"
     >
     </search>
     <tableSearch
@@ -105,6 +104,26 @@ export default {
           labelValue: {
             label: "username",
             value: "userId",
+          },
+          remoteMethod: async (query, item) => {
+            const params = {
+              current: 1,
+              size: 20,
+              username: query,
+            };
+            let { data: res } = await listUserIdByUsername(params);
+            item.options = res.data;
+
+            if (query) {
+              item.options = res.data.filter((item) => {
+                return item.username.indexOf(query) > -1;
+              });
+            }
+          },
+          visibleChange: (val, item) => {
+            if (val) {
+              item.remoteMethod(undefined, item);
+            }
           },
         },
         {
@@ -280,44 +299,9 @@ export default {
   },
   mounted() {
     this.getList();
-    this.getAuthorName();
   },
 
   methods: {
-    //用户列表的接口
-    async getAuthorName() {
-      const params = {
-        current: 1,
-        size: 20,
-      };
-      let { data: res } = await listUserIdByUsername(params);
-      this.searchForm.forEach((v) => {
-        if (v.prop === "userId") {
-          v.options = res.data;
-        }
-      });
-      // this.optionAuthor = res.data.records;
-      // this.comHandleAuthor(this.optionAuthor);
-    },
-    async remoteMethod(query) {
-      if (query) {
-        const params = {
-          current: 1,
-          size: 20,
-          username: query,
-        };
-        let { data: res } = await listUserIdByUsername(params);
-        this.searchForm.forEach((v) => {
-          if (v.prop === "userId") {
-            v.options = res.data.filter((item) => {
-              return item.username.indexOf(query) > -1;
-            });
-          }
-        });
-      } else {
-        this.getAuthorName();
-      }
-    },
     getList() {
       const params = {
         ...createParams({

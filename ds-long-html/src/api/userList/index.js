@@ -154,3 +154,9 @@ export function userTaskGoldDetails(data) {
     data,
   });
 }
+export function getUserDateCount(id) {
+  return request({
+    url: `/user/web/ds-user/getUserDateCount/${id}`,
+    method: "get",
+  });
+}

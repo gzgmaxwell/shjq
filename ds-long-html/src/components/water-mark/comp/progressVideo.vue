@@ -31,7 +31,7 @@
         {{ compTime(rangetTime[0]) }} / {{ compTime(rangetTime[1]) }}
       </div>
     </div>
-    <div class="opacityBox">
+    <!-- <div class="opacityBox">
       <div class="opacity">水印深度</div>
       <div class="progress">
         <el-slider
@@ -44,7 +44,7 @@
         >
         </el-slider>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -66,7 +66,7 @@ export default {
   },
   data() {
     return {
-      opacity: 100,
+      // opacity: 100,
       isPlaying: false,
       rangetTime: [0, baseValue],
       startTime: 0,
@@ -121,7 +121,7 @@ export default {
         (this.videoClient.duration * this.rangetTime[1]) / baseValue;
       const params = {
         isPlaying: this.isPlaying,
-        opacity: this.opacity,
+        // opacity: this.opacity,
         currentTime: this.currentTime,
         startTime,
         endTime,
@@ -131,10 +131,11 @@ export default {
     changeTime(item) {
       this.startTime = item.startTime;
       this.endTime = item.endTime;
-      const startTime = (this.startTime / this.videoClient.duration) * baseValue;
+      const startTime =
+        (this.startTime / this.videoClient.duration) * baseValue;
       const endTime = (this.endTime / this.videoClient.duration) * baseValue;
       this.rangetTime = [startTime, endTime];
-      this.opacity = item.opacity;
+      // this.opacity = item.opacity;
     },
     drag(e) {
       const timeProgress = this.$refs.timeProgress;

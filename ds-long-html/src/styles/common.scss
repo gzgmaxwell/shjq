@@ -330,3 +330,11 @@ a {
 ::-webkit-scrollbar-corner {
   display: none;
 }
+.disabled {
+  cursor: not-allowed;
+  color: #b9b3b3;
+}
+//控制\n换行显示
+.pre {
+  white-space: pre-wrap;
+}

@@ -22,7 +22,7 @@
 import search from "@/components/tableSearch/search";
 import tableSearch from "@/components/tableSearch/table";
 import { getPlTabData } from "@/api/video-manage/audit-record.js";
-import { optVideoStyle, resetSearchData } from "@/util/util";
+import { filterNullSearchData, resetSearchData } from "@/util/util";
 
 export default {
   components: {
@@ -49,19 +49,10 @@ export default {
           clearable: true,
           labelWidth: "120",
         },
-        {
-          type: "select",
-          prop: "videoSiftType",
-          placeholder: "视频样式",
-          options: optVideoStyle,
-          styleWidth: "120",
-          clearable: true,
-        },
       ],
       searchData: {
         substanceTitle: "",
         userName: "",
-        videoSiftType: "",
       },
       searchHandle: [
         {
@@ -76,7 +67,6 @@ export default {
           label: "重置",
           callback: () => {
             resetSearchData(this.searchData);
-            this.tablePage.total = 0;
             this.tablePage.current = 1;
             this.tablePage.size = 10;
             this.getList();
@@ -96,7 +86,7 @@ export default {
         },
         {
           prop: "videoTitle",
-          label: "视频来源",
+          label: "视频标题",
         },
 
         {
@@ -131,7 +121,7 @@ export default {
         },
       ],
       tablePage: {
-        total: 1,
+        total: 0,
         current: 1,
         size: 10,
         pagination: (val) => {
@@ -149,7 +139,7 @@ export default {
   methods: {
     getList() {
       const params = {
-        ...this.searchData,
+        ...filterNullSearchData(this.searchData),
         current: this.tablePage.current,
         size: this.tablePage.size,
         orderType: 2,

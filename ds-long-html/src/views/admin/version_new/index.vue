@@ -1,123 +1,29 @@
 <template>
   <basic-container>
-    <el-form inline>
-      <el-form-item>
-        <el-input
-          v-model="searchData.versionOfficial"
-          clearable
-          placeholder="请输入官方版本号"
-        ></el-input>
-      </el-form-item>
-
-      <el-form-item>
-        <el-button @click="search" type="primary">{{ $t("query") }}</el-button>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="reset">{{ $t("reset") }}</el-button>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="add" type="primary">{{ $t("add") }}</el-button>
-      </el-form-item>
-    </el-form>
-
-    <el-table :data="tableData" style="width: 100%" v-loading="loading" border>
-      <el-table-column
-        :label="$t('serial_number')"
-        type="index"
-        width="50"
-        align="center"
-      >
-        <template slot-scope="scope">{{
-          scope.$index + 1 + (tablePage.current - 1) * tablePage.size
-        }}</template>
-      </el-table-column>
-
-      <el-table-column label="官方版本号" width="90">
-        <template slot-scope="scope">
-          <span>{{ scope.row.versionOfficial }}</span>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="平台" width="80">
-        <template slot-scope="scope">
-          <span>{{ scope.row.platform }}</span>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="是否上线" width="50">
-        <template slot-scope="scope">
-          <span>
-            {{ getIsOnline(scope.row) }}
-          </span>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="是否强制更新" width="60">
-        <template slot-scope="scope">
-          <span>
-            {{ getUpdate(scope.row) }}
-          </span>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="更新内容">
-        <template slot-scope="scope">
-          <span>{{ scope.row.updateContent }}</span>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="视频平台">
-        <template slot-scope="scope">
-          <span> {{ getRegisterBusPlatformId(scope.row) }}</span>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="启用包名/签" width="120">
-        <template slot-scope="scope">
-          <span>{{ scope.row.packageName }}</span>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="创建时间" width="90">
-        <template slot-scope="scope">
-          <span>{{ scope.row.createTime }}</span>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="推送时间" width="90">
-        <template slot-scope="scope">
-          <span>{{ scope.row.pushTime }}</span>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="已推送" width="60">
-        <template slot-scope="scope">
-          <span>{{ getPush(scope.row) }}</span>
-        </template>
-      </el-table-column>
-
-      <el-table-column :label="$t('operate')" align="center" width="180">
-        <template slot-scope="scope">
-          <span class="link comBtn" @click="edit(scope.row)">编辑</span>
-          <span class="comBtn danger" @click="del(scope.row.id)">删除</span>
-          <span
-            class="link comBtn"
-            @click="i18n(scope.row)"
-            v-if="permissions.sys_version_language"
-            >国际化</span
-          >
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <pagination
-      v-if="tablePage.total"
-      :total="tablePage.total"
-      :page="tablePage.current"
-      :limit="tablePage.size"
-      @pagination="tablePage.pagination"
-    />
-
+    <search
+      :searchData="searchData"
+      :searchForm="searchForm"
+      :searchHandle="searchHandle"
+    >
+    </search>
+    <tableSearch
+      :loading="loading"
+      :tableData="tableData"
+      :searchData="searchData"
+      :tableLabel="tableLabel"
+      :tablePage="tablePage"
+      :isIndex="true"
+    >
+      <template #content="{ row, index }">
+        <span
+          @click="item.callback({ row, index })"
+          v-for="(item, i) in row.btnList"
+          :class="item.class"
+          :key="i"
+          >{{ item.name }}</span
+        >
+      </template>
+    </tableSearch>
     <el-dialog
       :visible.sync="visible"
       width="1202px"
@@ -143,26 +49,25 @@
 </template>
 
 <script>
-import pagination from "@/components/bas-pagination/index";
+import search from "@/components/tableSearch/search.vue";
+import tableSearch from "@/components/tableSearch/table.vue";
 import { optionsVersionUpdate } from "@/util/types";
 import { editionList, delObj } from "@/api/admin/version";
-import addClassify from "@/views/content/classify/component/addClassify.vue";
 import editVersion from "@/views/admin/version_new/editVersion.vue";
 import comIn18n from "@/views/common/commVideo/comIn18n.vue";
-import { optLong } from "@/util/util";
+import { optLong, resetSearchData } from "@/util/util";
 import { mapGetters } from "vuex";
 
 export default {
   components: {
-    pagination,
-    addClassify,
     editVersion,
     comIn18n,
+    search,
+    tableSearch,
   },
   data() {
     return {
       loading: false,
-      title: "",
       visible: false,
       in18nVisible: false,
       optionsVersionUpdate,
@@ -170,9 +75,121 @@ export default {
       searchData: {
         versionOfficial: "",
       },
+      searchForm: [
+        {
+          type: "input",
+          prop: "versionOfficial",
+          placeholder: "请输入官方版本号",
+          clearable: true,
+        },
+      ],
+      searchHandle: [
+        {
+          label: "search",
+          type: "primary",
+
+          callback: () => {
+            this.tablePage.current = 1;
+            this.getList();
+          },
+        },
+        {
+          label: "reset",
+          callback: () => {
+            resetSearchData(this.searchData);
+            this.tablePage.current = 1;
+            this.tablePage.size = 10;
+            this.getList();
+          },
+        },
+        {
+          auth: () => this.permissions.sys_version_add,
+          label: "add",
+          type: "primary",
+          callback: () => {
+            this.visible = true;
+            this.row = {
+              callback: (data) => {
+                if (data) {
+                  this.getList();
+                }
+                this.visible = false;
+              },
+            };
+          },
+        },
+      ],
       tableData: [],
+      tableLabel: [
+        {
+          prop: "versionOfficial",
+          label: "官方版本号",
+        },
+        {
+          prop: "platform",
+          label: "平台",
+        },
+        {
+          label: "是否上线",
+          type: "filter",
+          filter: (row) => {
+            return row.online ? "正式上线" : "预上线";
+          },
+        },
+        {
+          label: "是否强制更新",
+          type: "filter",
+          filter: (row) => {
+            return this.optionsVersionUpdate.find(
+              (v) => v.id === row.forceUpdate
+            )?.name;
+          },
+        },
+        {
+          prop: "updateContent",
+          label: "更新内容",
+        },
+        {
+          label: "视频平台",
+          type: "filter",
+          filter: (row) => {
+            return optLong.find((v) => v.id === row.registerBusPlatformId)
+              ?.name;
+          },
+        },
+        {
+          prop: "packageName",
+          label: "启用包名/签",
+        },
+        {
+          prop: "createTime",
+          label: "创建时间",
+        },
+        {
+          prop: "pushTime",
+          label: "推送时间",
+        },
+        {
+          label: "已推送",
+          type: "filter",
+          filter: (row) => {
+            const timestamp = Date.parse(row.pushTime);
+            const yesterday = new Date().getTime();
+            if (timestamp < yesterday) {
+              return "是";
+            }
+            return "否";
+          },
+        },
+        {
+          label: "操作",
+          type: "slot",
+          slotName: "content",
+          width: "150",
+        },
+      ],
       tablePage: {
-        total: 0,
+        total: 10,
         current: 1,
         size: 10,
         pagination: (val) => {
@@ -202,95 +219,75 @@ export default {
       this.loading = true;
       editionList(params)
         .then((res) => {
-          const { data } = res;
-          if (data.code === 200) {
-            this.loading = false;
-            this.tableData = data?.data?.records;
-            this.tablePage.total = data?.data?.total;
-          }
+          this.loading = false;
+          this.tableData = res.data.data.records.map((v) => {
+            v.btnList = this.getBtnList(v);
+            return v;
+          });
+          this.tablePage.total = res.data?.data?.total;
         })
         .catch(() => {
           this.loading = false;
         });
     },
-
-    search() {
-      this.tablePage.current = 1;
-      this.getList();
-    },
-    reset() {
-      this.searchData.versionOfficial = "";
-      this.tablePage.total = 0;
-      this.tablePage.current = 1;
-      this.tablePage.size = 10;
-      this.getList();
-    },
-    del(id) {
-      this.$confirm(this.$t("confirm_content"), this.$t("prompt"), {
-        confirmButtonText: this.$t("determine"),
-        cancelButtonText: this.$t("cancel"),
-        type: "warning",
-      }).then(() => {
-        delObj(id).then(() => {
-          this.getList();
-          this.$notify.success(this.$t("successfully_deleted"));
+    getBtnList(row) {
+      const btnList = [];
+      if (this.permissions.sys_version_edit) {
+        btnList.push({
+          name: "编辑",
+          class: "comBtn link",
+          callback: ({ row }) => {
+            this.visible = true;
+            this.row = {
+              ...row,
+              callback: (data) => {
+                if (data) {
+                  this.getList();
+                }
+                this.visible = false;
+              },
+            };
+          },
         });
-      });
-    },
-    add() {
-      this.visible = true;
-      this.row = {
-        callback: (data) => {
-          if (data) {
-            this.getList();
-          }
-          this.visible = false;
-        },
-      };
-    },
-    getUpdate(row) {
-      return this.optionsVersionUpdate.find((v) => v.id === row.forceUpdate)
-        ?.name;
-    },
-
-    getIsOnline(row) {
-      return row.online ? "正式上线" : "预上线";
-    },
-
-    getPush(row) {
-      const timestamp = Date.parse(row.pushTime);
-      const yesterday = new Date().getTime();
-      if (timestamp < yesterday) {
-        return "是";
       }
-      return "否";
-    },
-    getRegisterBusPlatformId(row) {
-      return optLong.find((v) => v.id === row.registerBusPlatformId)?.name;
-    },
-    edit(row) {
-      this.visible = true;
-      this.row = {
-        ...row,
-        callback: (data) => {
-          if (data) {
-            this.getList();
-          }
-          this.visible = false;
-        },
-      };
-    },
-    i18n(row) {
-      this.in18nVisible = true;
-      this.row = {
-        ...row,
-        callback: (data) => {
-          if (data) {
-            this.getList();
-          }
-          this.in18nVisible = false;
-        },
-      };
+      if (this.permissions.sys_version_del) {
+        btnList.push({
+          name: "删除",
+          class: "comBtn danger",
+          callback: () => {
+            this.$confirm(this.$t("confirm_content"), this.$t("prompt"), {
+              confirmButtonText: this.$t("determine"),
+              cancelButtonText: this.$t("cancel"),
+              type: "warning",
+            }).then(() => {
+              delObj(row.id).then(() => {
+                this.getList();
+                this.$notify.success(this.$t("successfully_deleted"));
+              });
+            });
+          },
+        });
+      }
+
+      if (this.permissions.sys_version_language) {
+        btnList.push({
+          name: "国际化",
+          class: "comBtn link",
+          callback: ({ row }) => {
+            this.in18nVisible = true;
+            this.row = {
+              ...row,
+              callback: (data) => {
+                if (data) {
+                  this.getList();
+                }
+                this.in18nVisible = false;
+              },
+            };
+          },
+        });
+      }
+      return btnList;
     },
   },
 };

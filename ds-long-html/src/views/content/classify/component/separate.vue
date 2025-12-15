@@ -13,7 +13,7 @@
       :tableLabel="tableLabel"
       :tablePage="tablePage"
       :tableEvents="tableEvents"
-      :isSelection="true"
+      :isSelection="false"
     >
       <template #slotBtn="{ row, index }">
         <span
@@ -52,6 +52,9 @@ import {
   optionsShowStyle,
   debounceCallBack,
   resetSearchData,
+  filterNullSearchData,
+  EnumBusPlatformId,
+  optSvipRestrictions,
 } from "@/util/util";
 import createIn18n from "@/views/content/navigation/component/createIn18n.vue";
 import addClassify from "@/views/content/classify/component/addClassify.vue";
@@ -75,6 +78,8 @@ export default {
   },
   data() {
     return {
+      //平台id
+      platFormId: "",
       loading: false,
       visible: false,
       in8nVisible: false,
@@ -155,7 +160,10 @@ export default {
           label: "标签名称",
           type: "html",
           html: (row) => {
-            if (row.defaultFlag === 1) {
+            if (
+              row.defaultFlag === 1 &&
+              EnumBusPlatformId.platForm_id === this.platFormId
+            ) {
               return `<span>${row.classifyName} </span>  <span class='tags'>默认标签</span>`;
             } else {
               return `<span>${row.classifyName}</span>`;
@@ -174,10 +182,9 @@ export default {
         {
           prop: "createUserName",
           label: "创建人",
-        },
-        {
-          prop: "createTime",
-          label: "创建时间",
+          show: () => {
+            return EnumBusPlatformId.platForm_id === this.platFormId;
+          },
         },
         {
           label: "状态",
@@ -186,6 +193,20 @@ export default {
             const item = optionStatus.find((v) => v.id == row.classifyStatus);
             return item?.label;
           },
+        },
+        {
+          label: "超级会员限制",
+          type: "filter",
+          filter: (row) => {
+            const item = optSvipRestrictions.find(
+              (v) => v.id == row.viewingPermissions
+            );
+            return item?.name;
+          },
+        },
+        {
+          prop: "createTime",
+          label: "创建时间",
         },
         {
           label: "操作",
@@ -211,18 +232,16 @@ export default {
     ...mapGetters({
       permissions: "permissions",
     }),
-    selectedTimeLength() {
-      return videoLength(this.searchData.tiemData, optionsTimeType);
-    },
   },
   mounted() {
+    this.platFormId = localStorage.getItem("BusPlatformId");
     this.getList();
   },
 
   methods: {
     getList() {
       const params = {
-        ...this.searchData,
+        ...filterNullSearchData(this.searchData),
         current: this.tablePage.current,
         size: this.tablePage.size,
       };
@@ -268,6 +287,7 @@ export default {
           class: "comBtn danger",
           callback: () => {
             debounceCallBack(this.getTagCount)(row);
+            this.$store.dispatch("actionClassify");
           },
         });
       }
@@ -290,66 +310,65 @@ export default {
           },
         });
       }
+      if (this.permissions?.classify_setDefault) {
+        if (row.defaultFlag == 1) {
+          btnList.push({
+            name: "取消默认",
+            class: `comBtn link`,
+            callback: () => {
+              const params = {
+                id: row.id,
+                defaultFlag: 0,
+                classifyName: row.classifyName,
+                classifyStatus: row.classifyStatus - 0,
+                sortValue: row.sortValue,
+              };
+              update(params).then((res) => {
+                const { data } = res;
+                if (data.code == 200) {
+                  this.$message.success("取消默认成功");
+                  this.getList();
+                }
+              });
+            },
+          });
+        }
 
-      if (row.defaultFlag == 1) {
-        btnList.push({
-          name: "取消默认",
-          class: `comBtn link`,
-          callback: () => {
-            const params = {
-              id: row.id,
-              defaultFlag: 0,
-              classifyName: row.classifyName,
-              classifyStatus: row.classifyStatus - 0,
-              sortValue: row.sortValue,
-            };
-            update(params).then((res) => {
-              const { data } = res;
-              if (data.code == 200) {
-                this.$message.success("取消默认成功");
-                this.getList();
-              }
-            });
-          },
-        });
+        if (row.defaultFlag != 1) {
+          btnList.push({
+            name: "设为默认",
+            class: `comBtn link`,
+            callback: () => {
+              const params = {
+                id: row.id,
+                defaultFlag: 1,
+                classifyName: row.classifyName,
+                classifyStatus: row.classifyStatus - 0,
+                sortValue: row.sortValue,
+              };
+              update(params).then((res) => {
+                const { data } = res;
+                if (data.code == 200) {
+                  this.$message.success("设为默认成功");
+                  this.getList();
+                }
+              });
+            },
+          });
+        }
       }
-
-      if (row.defaultFlag != 1) {
-        btnList.push({
-          name: "设为默认",
-          class: `comBtn link`,
-          callback: () => {
-            const params = {
-              id: row.id,
-              defaultFlag: 1,
-              classifyName: row.classifyName,
-              classifyStatus: row.classifyStatus - 0,
-              sortValue: row.sortValue,
-            };
-            update(params).then((res) => {
-              const { data } = res;
-              if (data.code == 200) {
-                this.$message.success("设为默认成功");
-                this.getList();
-              }
-            });
-          },
-        });
-      }
-
       return btnList;
     },
     getTagCount(row) {
       this.loading = true;
       return getVideoCount({ id: row.id })
         .then((res) => {
-          let count;
-          if (res.data.code == 200) {
-            this.loading = false;
-            count = res.data.data;
-          }
+          this.loading = false;
+          let { videoCount, comicCount, novelCount } = res.data.data;
           this.$confirm(
-            `此标签下关联${count}视频,对应的视频将会无法通过此标签检索到,APP端也将不会显示此标签, 是否继续?`,
+            `此标签下关联 ${videoCount || 0} 视频, ${comicCount || 0} 漫画, ${
+              novelCount || 0
+            } 小说,对应的视频,漫画,小说将会无法通过此标签检索到,APP端也将不会显示此标签, 是否继续?`,
             "请注意!",
             {
               confirmButtonText: "确定",

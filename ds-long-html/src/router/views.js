@@ -106,7 +106,7 @@ const router_details = [
     ],
   },
   {
-    path: "/marketing/adlog",
+    path: "/marketing",
     component: Layout,
     name: "营销中心",
     children: [
@@ -131,6 +131,36 @@ const router_details = [
         component: () =>
           import(
             /* webpackChunkName: "page" */ "@/views/admin/SMsMgr/smsTemplate"
+          ),
+      },
+    ],
+  },
+  {
+    path: "/graphicManagement",
+    component: Layout,
+    name: "图文管理",
+    children: [
+      {
+        path: "/graphicManagement/cartoon/chapter",
+        name: "章节",
+        component: () =>
+          import(
+            /* webpackChunkName: "page" */ "@/views/graphicManagement/cartoon/chapter"
+          ),
+      },
+    ],
+  },
+  {
+    path: "/video-manage",
+    component: Layout,
+    name: "审核管理",
+    children: [
+      {
+        path: "/video-manage/cartoonTxtCheck/chapter",
+        name: "章节",
+        component: () =>
+          import(
+            /* webpackChunkName: "page" */ "@/views/video-manage/cartoonTxtCheck/chapter"
           ),
       },
     ],
@@ -259,6 +289,14 @@ const api_route = [
             /* webpackChunkName: "views" */ "@/views/Appinventory/lineOptimize/index"
           ),
       },
+      {
+        path: "/Appinventory/theme/index",
+        name: "风格管理",
+        component: () =>
+          import(
+            /* webpackChunkName: "views" */ "@/views/Appinventory/theme/index"
+          ),
+      },
     ],
   },
   {
@@ -379,6 +417,22 @@ const api_route = [
             /* webpackChunkName: "views" */ "@/views/video-manage/dismissReasons/index"
           ),
       },
+      {
+        path: "/video-manage/cartoonTxtCheck/index",
+        name: "图文信息审核",
+        component: () =>
+          import(
+            /* webpackChunkName: "views" */ "@/views/video-manage/cartoonTxtCheck/index"
+          ),
+      },
+      {
+        path: "/video-manage/cartoonViolationCheck/index",
+        name: "图文违规审核",
+        component: () =>
+          import(
+            /* webpackChunkName: "views" */ "@/views/video-manage/cartoonViolationCheck/index"
+          ),
+      },
     ],
   },
   {
@@ -487,6 +541,14 @@ const api_route = [
         component: () =>
           import(
             /* webpackChunkName: "views" */ "@/views/content/weightManagement/index"
+          ),
+      },
+      {
+        path: "/content/timestampStatistics/index",
+        name: "时间戳统计",
+        component: () =>
+          import(
+            /* webpackChunkName: "views" */ "@/views/content/timestampStatistics/index"
           ),
       },
     ],
@@ -941,6 +1003,92 @@ const api_route = [
         component: () =>
           import(
             /* webpackChunkName: "views" */ "@/views/distributor-manage/signature/index"
+          ),
+      },
+    ],
+  },
+  {
+    path: "/graphicManagement",
+    component: Layout,
+    children: [
+      {
+        path: "/graphicManagement/commentModeration/index",
+        name: "漫画评论审核",
+        component: () =>
+          import(
+            /* webpackChunkName: "views" */ "@/views/graphicManagement/commentModeration/index"
+          ),
+      },
+      {
+        path: "/graphicManagement/commentReport/index",
+        name: "漫画评论举报",
+        component: () =>
+          import(
+            /* webpackChunkName: "views" */ "@/views/graphicManagement/commentReport/index"
+          ),
+      },
+      {
+        path: "/graphicManagement/comicBookReport/index",
+        name: "漫画举报",
+        component: () =>
+          import(
+            /* webpackChunkName: "views" */ "@/views/graphicManagement/comicBookReport/index"
+          ),
+      },
+      {
+        path: "/graphicManagement/cartoon/index",
+        name: "漫画管理",
+        component: () =>
+          import(
+            /* webpackChunkName: "views" */ "@/views/graphicManagement/cartoon/index"
+          ),
+      },
+      {
+        path: "/graphicManagement/novelReport/index",
+        name: "小说举报",
+        component: () =>
+          import(
+            /* webpackChunkName: "views" */ "@/views/graphicManagement/novelReport/index"
+          ),
+      },
+      {
+        path: "/graphicManagement/novelCommentModeration/index",
+        name: "小说评论审核",
+        component: () =>
+          import(
+            /* webpackChunkName: "views" */ "@/views/graphicManagement/novelCommentModeration/index"
+          ),
+      },
+      {
+        path: "/graphicManagement/novelCommentReport/index",
+        name: "小说评论举报",
+        component: () =>
+          import(
+            /* webpackChunkName: "views" */ "@/views/graphicManagement/novelCommentReport/index"
+          ),
+      },
+      {
+        path: "/graphicManagement/novel/index",
+        name: "小说管理",
+        component: () =>
+          import(
+            /* webpackChunkName: "views" */ "@/views/graphicManagement/novel/index"
+          ),
+      },
+      {
+        path: "/graphicManagement/comicRecommend/index",
+        name: "漫画推荐管理",
+        component: () =>
+          import(
+            /* webpackChunkName: "views" */ "@/views/graphicManagement/comicRecommend/index"
+          ),
+      },
+      {
+        path: "/graphicManagement/novelRecommend/index",
+        name: "小说推荐管理",
+        component: () =>
+          import(
+            /* webpackChunkName: "views" */ "@/views/graphicManagement/novelRecommend/index"
           ),
       },
     ],

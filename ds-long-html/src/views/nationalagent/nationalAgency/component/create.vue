@@ -61,7 +61,7 @@
 
 <script>
 import upload from "@/components/upload/index.vue";
-import { optionsShowStyle, EnumShowStyle, debounceCallBack } from "@/util/util";
+import { debounceCallBack } from "@/util/util";
 import { saveScheme, updateScheme } from "@/api/admin/index";
 export default {
   props: {

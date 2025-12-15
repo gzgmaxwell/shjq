@@ -2,6 +2,24 @@ import * as CryptoJS from "crypto-js";
 import i18n from "@/lang/index";
 import moment from "moment";
 
+//自定义计算汉字长度的函数
+export const countMixedChars = (str) => {
+  let length = 0;
+  for (let i = 0; i < str.length; i++) {
+    const charCode = str.charCodeAt(i);
+    if (charCode >= 0 && charCode <= 128) {
+      length += 1;
+    } else if (charCode >= 0x10000) {
+      // 处理表情符号等多字节字符
+      length += 2;
+      i++; // 跳过下一个字符，因为它已经是当前字符的一部分
+    } else {
+      length += 2;
+    }
+  }
+  return length;
+};
+
 export const videoToBlob = (video) => {
   return new Promise((resolve) => {
     const canvas = document.createElement("canvas");
@@ -488,7 +506,9 @@ export function debounceCallBack(fn, ms = 400) {
 // 生成查询参数 处理查询参数时才传参
 export function createParams(obj) {
   return Object.entries(obj)
-    .filter(([key, value]) => value)
+    .filter(
+      ([key, value]) => value !== null && value !== undefined && value !== ""
+    )
     .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
 }
 // 导出excel流处理
@@ -518,7 +538,33 @@ export const getTimeZone = () => {
   return `GMT${newTimezone}:${m}`;
 };
 
-//字典枚举
+// app管理/其他设置菜单 按钮权限点
+export const enumPermissionsKey = [
+  "sys_otherSettings_promoteSharing", // 推广分享
+  "sys_otherSettings_promotionCode", // 首页推广码弹窗开关]
+  "sys_otherSettings_release", // 发布
+  "sys_otherSettings_bootPageSwitch", // 身份卡引导页
+  "sys_otherSettings_cardGuidePopover", // 保存身份卡任务强制引导弹窗
+  "sys_otherSettings_recommendAdConfig", // 清屏状态展示广告
+  "sys_otherSettings_comic", // 漫画版块
+  "sys_otherSettings_novel", // 小说版块
+  "sys_otherSettings_nationalAgent", // 全民代理
+];
+
+//字典枚举name
+export const enumDictionaryName = {
+  EXTENSION_SHARE: "EXTENSION_SHARE",
+  POPUP_BIND_INVITE_WINDOW: "POPUP_BIND_INVITE_WINDOW",
+  APPCONTROL: "APPCONTROL",
+  HOME_GUIDE_SETTING: "HOME_GUIDE_SETTING",
+  MANDATORY_SAVING_IDENTITY_CARDS_SETTING:
+    "MANDATORY_SAVING_IDENTITY_CARDS_SETTING",
+  INK_LORE_CONFIG: "INK_LORE_CONFIG",
+  RECOMMEND_AD_CONFIG: "RECOMMEND_AD_CONFIG",
+  EXTENSION_ENTRANCE_CONFIG: "EXTENSION_ENTRANCE_CONFIG",
+};
+
+//字典枚举key
 export const enumDictionaryKey = {
   IS_ALLOW_AUTO_CONSUM: "IS_ALLOW_AUTO_CONSUM", //允许用户点击取消自动消耗观影卡
   VIDEO_CARD_DEF_NUM: "VIDEO_CARD_DEF_NUM", //所需观影卡
@@ -530,6 +576,14 @@ export const enumDictionaryKey = {
   POPUP_BIND_INVITE_WINDOW_SWITCH: "POPUP_BIND_INVITE_WINDOW_SWITCH", //首页推广码弹窗开关
   RELEASE_CONTROL: "RELEASE_CONTROL", //发布
   HOME_GUIDE_SETTING: "HOME_GUIDE_SETTING", //身份卡引导页
+  MANDATORY_SAVING_IDENTITY_CARDS_SETTING_SWITCH:
+    "MANDATORY_SAVING_IDENTITY_CARDS_SETTING_SWITCH", //保存身份卡任务强制引导弹窗
+  INK_LORE_COMIC: "INK_LORE_COMIC", //漫画版块
+  INK_LORE_NOVEL: "INK_LORE_NOVEL", //小说版块
+  RECOMMEND_AD_CONFIG: "RECOMMEND_AD_CONFIG", //清屏状态展示广告
+  EXTENSION_ENTRANCE_CONFIG: "EXTENSION_ENTRANCE_CONFIG", //全民代理
+  CREATE_INTERVAL_TIME: "CREATE_INTERVAL_TIME",
+  DAILY_LIMIT_COUNT: "DAILY_LIMIT_COUNT",
 };
 
 // 待提交→待一审→系统处理中→待二审→二审通过
@@ -1054,6 +1108,20 @@ export const videoUnmountStatus = [
     name: "下架",
   },
 ];
+export const ENUM_COMIC_STATUS = {
+  normal: false,
+  delist: true,
+};
+export const comicStatus = [
+  {
+    id: ENUM_VIDEO_STATUS.delist,
+    name: "上架",
+  },
+  {
+    id: ENUM_VIDEO_STATUS.normal,
+    name: "下架",
+  },
+];
 export const ENUM_AD_HANDLETYPE = {
   processed: "2",
   unprocessed: "1",
@@ -1299,14 +1367,24 @@ export const EnumAdType = {
   EVENT_PAGE: "EVENT_PAGE", //  动态列表
   TALK_PAGE: "TALK_PAGE", // 话题详情
   VIDEO_DETAIL_FLOATING_WINDOW: "VIDEO_DETAIL_FLOATING_WINDOW", // 视频详情-底角浮窗
-  INDEX_PAGE_POP_UPS: "INDEX_PAGE_POP_UPS", // 首页弹窗
-  VIDEO_DETAIL_AUTHOR_DESC: "VIDEO_DETAIL_AUTHOR_DESC", //  作者简介
+  VIDEO_DETAIL_AUTHOR_DESC: "VIDEO_DETAIL_AUTHOR_DESC", //  视频详情-作者简介
   PORTRAIT_BOTTOM_BANNER: "PORTRAIT_BOTTOM_BANNER", // 底部横视频
   FIRST_PAGE: "FIRST_PAGE", // 一级页面广告位
   VIDEO_INSERT_AD: "VIDEO_INSERT_AD", // 插播广告
   VIDEO_STOP_AD: "VIDEO_STOP_AD", // 暂停广告
   BULLET_AD: "BULLET_AD", // 弹幕广告
   SHORT_VIDEO_FLOW: "SHORT_VIDEO_AD", // 短视频播放器信息流
+  INDEX_PAGE_POP_UPS: "INDEX_PAGE_POP_UPS", // 首页弹窗
+  CHANNEL_PAGE_POP_UPS: "CHANNEL_PAGE_POP_UPS", // 频道弹窗
+  GAME_PAGE_POP_UPS: "GAME_PAGE_POP_UPS", // 游戏弹窗
+  MINE_PAGE_POP_UPS: "MINE_PAGE_POP_UPS", // 我的弹窗
+  MSG_PAGE_POP_UPS: "MSG_PAGE_POP_UPS", // 消息弹窗
+  WEAK_NETWORK_AD: "WEAK_NETWORK_AD", // 弱网广告
+  INDEX_PAGE_FLOAT_UPS: "INDEX_PAGE_FLOAT_UPS", // 首页浮窗
+  GAME_PAGE_FLOAT_UPS: "GAME_PAGE_FLOAT_UPS", // 游戏浮窗
+  CHANNEL_PAGE_FLOAT_UPS: "CHANNEL_PAGE_FLOAT_UPS", // 频道浮窗
+  MSG_PAGE_FLOAT_UPS: "MSG_PAGE_FLOAT_UPS", // 消息浮窗
+  MINE_PAGE_FLOAT_UPS: "MINE_PAGE_FLOAT_UPS", // 我的浮窗
 };
 
 export const optionAdType = [
@@ -1462,6 +1540,10 @@ export const EnumJumpType = {
   GOLD: "GOLD",
   NATIONAL_AGENT: "NATIONAL_AGENT",
   BIND_MOBILE_WELFARE: "BIND_MOBILE_WELFARE",
+  CENTER_OF_ACTIVITY: "CENTER_OF_ACTIVITY",
+  NO_JUMP: "NO_JUMP",
+  MASK_CENTER: "MASK_CENTER", // 任务中心
+  MASK_CENTER_AWARD: "MASK_CENTER_AWARD", // 任务中心-奖励兑换
 };
 export const optionJumpType = [
   {
@@ -1506,6 +1588,22 @@ export const optJumpType = [
   {
     id: EnumJumpType.BIND_MOBILE_WELFARE,
     name: "绑定手机",
+  },
+  {
+    id: EnumJumpType.CENTER_OF_ACTIVITY,
+    name: "活动中心",
+  },
+  {
+    id: EnumJumpType.NO_JUMP,
+    name: "无跳转",
+  },
+  {
+    id: EnumJumpType.MASK_CENTER,
+    name: "任务中心",
+  },
+  {
+    id: EnumJumpType.MASK_CENTER_AWARD,
+    name: "任务中心-奖励兑换",
   },
 ];
 export const EnumCrowdType = {
@@ -2031,6 +2129,22 @@ export const optionsDismiss = [
     name: "视频内容不合规",
   },
 ];
+//图文驳回
+export const EnumDismissComic = {
+  VIDEO_INFO: "VIDEO_INFO",
+  VIDEO_CONTENT: "VIDEO_CONTENT",
+};
+export const optionsDismissComic = [
+  {
+    id: EnumDismissComic.VIDEO_INFO,
+    name: "编辑信息不合规",
+  },
+  {
+    id: EnumDismissComic.VIDEO_CONTENT,
+    name: "内容不合规",
+  },
+];
+
 export const EnumDownload = {
   one: 1,
   zero: 0,
@@ -2049,6 +2163,7 @@ export const EnumShowStyle = {
   DEFAULT: "DEFAULT",
   LIST: "LIST",
   BIG: "BIG",
+  WATERFALL: "WATERFALL",
 };
 export const optionsShowStyle = [
   {
@@ -2062,6 +2177,10 @@ export const optionsShowStyle = [
   {
     id: EnumShowStyle.BIG,
     name: "大图",
+  },
+  {
+    id: EnumShowStyle.WATERFALL,
+    name: "瀑布流",
   },
 ];
 
@@ -2229,6 +2348,7 @@ export const Enum_MovieCard = {
   LOTTERY: "LOTTERY",
   TASK: "TASK",
   NEW_USER_BENEFITS: "NEW_USER_BENEFITS", // 新用户福利
+  TIMESTAMP_AWARD: "TIMESTAMP_AWARD",
 };
 export const optionMovieCardSource = [
   {
@@ -2251,12 +2371,18 @@ export const optionMovieCardSource = [
     id: Enum_MovieCard.INVITE,
     name: "全民代理",
   },
+  {
+    id: Enum_MovieCard.TIMESTAMP_AWARD,
+    name: "时间戳任务",
+  },
 ];
 export const Enum_points = {
   EXCHANGE_PROPS: "EXCHANGE_PROPS",
   LOTTERY_WINNING: "LOTTERY_WINNING",
   LOTTERY: "LOTTERY",
   MARKETING_TASK: "MARKETING_TASK",
+  C_END_AGENT: "C_END_AGENT",
+  TIMESTAMP_AWARD: "TIMESTAMP_AWARD",
 };
 export const optionpoints = [
   {
@@ -2278,6 +2404,14 @@ export const optionpoints = [
   {
     id: Enum_MovieCard.NEW_USER_BENEFITS,
     name: "新用户福利",
+  },
+  {
+    id: Enum_points.C_END_AGENT,
+    name: "全民代理",
+  },
+  {
+    id: Enum_points.TIMESTAMP_AWARD,
+    name: "时间戳任务",
   },
 ];
 export const Enum_pointsType = {
@@ -2334,6 +2468,7 @@ export const Enum_goldCoin = {
   LOTTERY: "LOTTERY",
   EXCHANGE: "EXCHANGE",
   INVITE_REWARDS: "INVITE_REWARDS",
+  TIMESTAMP_AWARD: "TIMESTAMP_AWARD",
 };
 export const optionGoldCoin = [
   {
@@ -2351,6 +2486,10 @@ export const optionGoldCoin = [
   {
     id: Enum_MovieCard.NEW_USER_BENEFITS,
     name: "新用户福利",
+  },
+  {
+    id: Enum_goldCoin.TIMESTAMP_AWARD,
+    name: "时间戳任务",
   },
 ];
 export const Enum_blacklistSource = {
@@ -2502,7 +2641,7 @@ export const optWelfare = [
 
 export const EnumWelfareType = {
   FOUNDATIONWELFARE: "FOUNDATIONWELFARE",
-  EXTRAWELFARE: "EXTRAWELFARE ",
+  EXTRAWELFARE: "EXTRAWELFARE",
 };
 
 export const optWelfareType = [
@@ -2619,7 +2758,7 @@ export const optVideoRatioType = [
 
 export const EnumPackage = {
   HANDING: "HANDING", // 打包中
-  SUCCEED: "SUCCEED", // 打包成功
+  SUCCEED: "SUCCEED", //  打包成功
   FAILED: "FAILED", // 打包失败
 };
 
@@ -2665,5 +2804,291 @@ export const optSliceLevel = [
   {
     id: EnumSliceLevel.five,
     name: "5级 ",
+  },
+];
+
+export const EnumTheme = {
+  start: true,
+  stop: false,
+};
+
+export const optTheme = [
+  {
+    id: EnumTheme.start,
+    name: "启用",
+  },
+  {
+    id: EnumTheme.stop,
+    name: "停用",
+  },
+];
+
+export const EnumPlatform = {
+  start: "start", // 横
+  stop: "stop", // 竖
+};
+
+export const optPlatform = [
+  {
+    id: EnumTheme.start,
+    name: "启用",
+  },
+  {
+    id: EnumTheme.stop,
+    name: "停用",
+  },
+];
+
+export const EnumAutoPackag = {
+  yes: true,
+  no: false,
+};
+
+export const optAutoPackag = [
+  {
+    id: EnumAutoPackag.no,
+    name: "否",
+    label: "未发布",
+  },
+  {
+    id: EnumAutoPackag.yes,
+    name: "是",
+    label: "已发布",
+  },
+];
+
+export const EnumComTrueAndFalse = {
+  TRUE: true,
+  FASLE: false,
+};
+
+export const optOnline = [
+  {
+    id: EnumComTrueAndFalse.TRUE,
+    name: "正式上线",
+  },
+  {
+    id: EnumComTrueAndFalse.FASLE,
+    name: "预上线",
+  },
+];
+export const optShowExpireTime = [
+  {
+    id: EnumComTrueAndFalse.TRUE,
+    name: "是",
+  },
+  {
+    id: EnumComTrueAndFalse.FASLE,
+    name: "否",
+  },
+];
+
+export const EnumShowZone = {
+  UPPER_LEFT: "UPPER_LEFT",
+  UPPER_RIGHT: "UPPER_RIGHT",
+  BOTTOM_LEFT: "BOTTOM_LEFT",
+  BOTTOM_RIGHT: "BOTTOM_RIGHT",
+};
+
+export const optShowZone = [
+  {
+    id: EnumShowZone.UPPER_LEFT,
+    name: "左上角",
+    isActive: true,
+  },
+  {
+    id: EnumShowZone.UPPER_RIGHT,
+    name: "右上角",
+    isActive: false,
+  },
+  {
+    id: EnumShowZone.BOTTOM_LEFT,
+    name: "左下角",
+    isActive: false,
+  },
+  {
+    id: EnumShowZone.BOTTOM_RIGHT,
+    name: "右下角",
+    isActive: false,
+  },
+];
+export const EnumBusPlatformId = {
+  //平台id
+  platForm_id: "11110",
+};
+export const isBusPlatform = () => {
+  const BusPlatformId = localStorage.getItem("BusPlatformId");
+  return BusPlatformId === EnumBusPlatformId.platForm_id;
+};
+
+export const EnumCartoonStatus = {
+  start: "SERIALIZATION",
+  stop: "FINISHED",
+};
+
+export const optCartoonStatus = [
+  {
+    id: EnumCartoonStatus.start,
+    name: "连载中",
+  },
+  {
+    id: EnumCartoonStatus.stop,
+    name: "完结",
+  },
+];
+
+export const EnumCartoonSpace = {
+  short: "SHORT",
+  mid: "MEDIUM_LENGTH",
+  long: "FULL_LENGTH",
+};
+
+export const optCartoonSpace = [
+  {
+    id: EnumCartoonSpace.short,
+    name: "短篇",
+  },
+  {
+    id: EnumCartoonSpace.mid,
+    name: "中篇",
+  },
+  {
+    id: EnumCartoonSpace.long,
+    name: "长篇",
+  },
+];
+
+export const EnumCartoonType = {
+  comic: "COMIC", //漫画
+  novel: "NOVEL", //小说
+};
+export const EnumCommentReport = {
+  COMIC_COMMENT: "COMIC_COMMENT", //漫画评论
+  NOVEL_COMMENT: "NOVEL_COMMENT", //小说评论
+};
+
+export const optCartoonType = [
+  {
+    id: EnumCartoonType.comic,
+    name: "漫画",
+    accept: "image/png,image/jpg,image/jpeg",
+    limit: 999,
+    multiple: true,
+    maxFileSize: 50,
+    tip: "文件名必须为数字，格式为png,jpg,jpeg",
+    goback: "/graphicManagement/cartoon/index",
+    gobackCheck: "/video-manage/cartoonTxtCheck/index",
+    isFilterContent: false,
+    isNumberFileName: true,
+    isEncodingUtf8: false,
+  },
+  {
+    id: EnumCartoonType.novel,
+    name: "小说",
+    accept: ".txt,.epub",
+    limit: 1,
+    multiple: true,
+    maxFileSize: 500,
+    tip: "支持扩展名为：.txt 或 .epub,编码格式为utf-8",
+    goback: "/graphicManagement/novel/index",
+    gobackCheck: "/video-manage/cartoonTxtCheck/index",
+    isFilterContent: false,
+    isNumberFileName: false,
+    isEncodingUtf8: true,
+  },
+];
+
+export const optSplitCode = [
+  {
+    id: "第.*章",
+    name: "第.*章",
+  },
+  {
+    id: "第.*节",
+    name: "第.*节",
+  },
+  {
+    id: "第.*回",
+    name: "第.*回",
+  },
+  {
+    id: "Chapter.*",
+    name: "Chapter.*",
+  },
+];
+export const enum_svipRestrictions = {
+  yes: true,
+  no: false,
+};
+export const optSvipRestrictions = [
+  {
+    id: enum_svipRestrictions.yes,
+    name: "是",
+  },
+  {
+    id: enum_svipRestrictions.no,
+    name: "否",
+  },
+];
+
+export const EnumCartoonTxtStatus = {
+  DRAFT: "DRAFT", // 草稿
+  AUDITING: "AUDITING", //  审核中
+  UNQUALIFIED: "UNQUALIFIED", // 信息不合格
+  AUDIT_REJECTED: "AUDIT_REJECTED", // 审核失败
+  AUDIT_PASS: "AUDIT_PASS", // 审核通过
+};
+
+export const optCartoonTxtStatus = [
+  {
+    id: EnumCartoonTxtStatus.DRAFT,
+    name: "草稿",
+  },
+  {
+    id: EnumCartoonTxtStatus.AUDITING,
+    name: "审核中",
+  },
+  {
+    id: EnumCartoonTxtStatus.UNQUALIFIED,
+    name: "信息不合格",
+  },
+  {
+    id: EnumCartoonTxtStatus.AUDIT_REJECTED,
+    name: "审核失败",
+  },
+  // {
+  //   id: EnumCartoonStatus.AUDIT_PASS,
+  //   name: "审核通过",
+  // },
+];
+
+export const EnumCartoonOrigin = {
+  SUPPLIER: "SUPPLIER",
+  THIRD_PARTY: "THIRD_PARTY",
+};
+
+export const optCartoonOrigin = [
+  {
+    id: EnumCartoonOrigin.SUPPLIER,
+    name: "供应商",
+  },
+  {
+    id: EnumCartoonOrigin.THIRD_PARTY,
+    name: "第三方",
+  },
+];
+export const EnumWatermarkType = {
+  TRUE: true,
+  FASLE: false,
+};
+
+export const optWatermarkType = [
+  {
+    id: EnumWatermarkType.FASLE,
+    name: "手动",
+  },
+  {
+    id: EnumWatermarkType.TRUE,
+    name: "自动",
   },
 ];

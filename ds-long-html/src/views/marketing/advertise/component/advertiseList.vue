@@ -12,9 +12,11 @@
       :searchData="searchData"
       :tableLabel="tableLabel"
       :tablePage="tablePage"
-      :operation="{}"
+      :tableEvents="tableEvents"
       :isSelection="false"
+      rowKey="id"
       :isIndex="true"
+      :sortHandleType="false"
     >
       <template #content="{ row, index }">
         <div v-if="row.advertContent && !IS_SHORT_VIDEO_FLOW(row)">
@@ -88,6 +90,14 @@
     >
       <img width="100%" height="100%" :src="row.adFileUrl" alt="" />
     </el-dialog>
+    <el-dialog
+      title="批量新建"
+      :visible.sync="visiblePatch"
+      width="50%"
+      :close-on-click-modal="false"
+    >
+      <createAdPatch :row="row" v-if="visiblePatch"></createAdPatch>
+    </el-dialog>
   </div>
 </template>
 
@@ -96,7 +106,13 @@ import { pageHandle } from "@/util/pageHandle";
 import tableSearch from "@/components/tableSearch/table";
 import search from "@/components/tableSearch/search.vue";
 import create from "./createAd.vue";
-import { tablist, deletetab, seat } from "@/api/content/advertising";
+import createAdPatch from "./createAdPatch.vue";
+import {
+  tablist,
+  deletetab,
+  seat,
+  advert_sort,
+} from "@/api/content/advertising";
 import sidVideoPlayer from "@/components/video-player";
 import drag from "@/components/drag/index.vue";
 import {
@@ -106,7 +122,15 @@ import {
   resetSearchData,
   filterNullSearchData,
   EnumAdType,
+  EnumLocationType,
 } from "@/util/util";
+
+const drag_ad = [
+  "WALLET_PAGE", //钱包 WALLET_PAGE 94
+  "MY_HOME_PAGE", //个人中心 MY_HOME_PAGE 126
+  "VIDEO_DETAIL_AUTHOR_DESC", //视频详情-作者简介 VIDEO_DETAIL_AUTHOR_DESC 110
+  // "banner", //推荐 banner 122
+];
 export default {
   components: {
     tableSearch,
@@ -114,24 +138,39 @@ export default {
     create,
     drag,
     sidVideoPlayer,
+    createAdPatch,
   },
   data() {
     return {
       visible: false,
+      visiblePatch: false,
       imgVisible: false,
+      isDragAd: false,
+      isSearch: false,
       row: {},
       loading: false,
       posAdOption: [],
+      tableEvents: {
+        dragRowCallBack: ({ tableData }) => {
+          this.tableData = tableData;
+        },
+      },
       searchForm: [
         {
           type: "input",
           prop: "advertTitle",
           placeholder: "广告标题",
           clearable: true,
+          change: ({ value }) => {
+            this.isSearch = false;
+          },
         },
         {
           type: "datetimerange",
           prop: "dateTime",
+          change: ({ value }) => {
+            this.isSearch = false;
+          },
         },
         {
           type: "select",
@@ -139,6 +178,9 @@ export default {
           placeholder: "广告状态",
           clearable: true,
           options: optionComStatus,
+          change: ({ value }) => {
+            this.isSearch = false;
+          },
         },
         {
           type: "select",
@@ -146,6 +188,9 @@ export default {
           placeholder: "跳转类型",
           clearable: true,
           options: optJumpType,
+          change: ({ value }) => {
+            this.isSearch = false;
+          },
         },
         {
           type: "select",
@@ -157,12 +202,15 @@ export default {
             label: "advertLocationName",
             value: "id",
           },
+          change: ({ value }) => {
+            this.isSearch = false;
+          },
         },
       ],
       searchData: {
         advertTitle: "", //广告标题
         status: null, //广告状态（1 启用 0 停用）
-        dateTime: [],
+        dateTime: null,
         jumpType: "",
         locationId: "",
       },
@@ -172,6 +220,7 @@ export default {
           type: "primary",
           callback: () => {
             this.tablePage.current = 1;
+            this.isSearch = true;
             this.getList();
           },
         },
@@ -179,9 +228,11 @@ export default {
           label: "reset",
           callback: () => {
             resetSearchData(this.searchData);
+            this.searchData.dateTime = null;
             this.tablePage.total = 0;
             this.tablePage.current = 1;
             this.tablePage.size = 10;
+            this.isSearch = false;
             this.getList();
           },
         },
@@ -200,12 +251,87 @@ export default {
             };
           },
         },
+        {
+          label: "批量新增",
+          type: "primary",
+          callback: () => {
+            this.visiblePatch = true;
+            this.row = {
+              callback: (data) => {
+                if (data) {
+                  this.getList();
+                }
+                this.visiblePatch = false;
+              },
+            };
+          },
+        },
+        {
+          label: "排序调整保存",
+          type: "primary",
+          auth: () => this.isDragAd && this.isSearch,
+          callback: () => {
+            const params = {
+              ids: this.tableData.map((v) => v.id),
+            };
+            advert_sort(params).then(() => {
+              this.$message.success("保存成功");
+              this.getList();
+            });
+          },
+        },
+        {
+          label: "取消",
+          auth: () => this.isDragAd && this.isSearch,
+          callback: () => {
+            this.tableData = [];
+            this.getList();
+          },
+        },
       ],
       tableData: [],
       tableLabel: [
         {
+          label: "拖拽排序",
+          type: "dragMove",
+          show: () => {
+            if (!this.isSearch) return false;
+            const selfSearchData = {
+              ...this.searchData,
+            };
+            delete selfSearchData.locationId;
+            const isTrue = Object.keys(selfSearchData).every(
+              (key) =>
+                selfSearchData[key] === "" ||
+                selfSearchData[key] === undefined ||
+                selfSearchData[key] === null
+            );
+            const moveDragArr = this.posAdOption.map((v) => {
+              // 首页推荐banner
+              const isBanner =
+                v.locationType === EnumLocationType.RECOMMEND &&
+                v.location === EnumAdType.BANNER;
+              if (drag_ad.includes(v.fixLocation) || isBanner) {
+                return v.id;
+              }
+            });
+            if (
+              moveDragArr.includes(this.searchData.locationId) &&
+              this.tableData.length > 1 &&
+              isTrue
+            ) {
+              this.isDragAd = true;
+              return true;
+            }
+            this.isDragAd = false;
+            return false;
+          },
+        },
+        {
           label: "广告标题",
           prop: "advertTitle",
+          width: 120,
+          showOverflowTooltip: true,
         },
         {
           label: "广告内容",
@@ -216,6 +342,8 @@ export default {
         {
           prop: "advertLocationName",
           label: "广告位名称",
+          width: 140,
+          showOverflowTooltip: true,
         },
         {
           prop: "sortWeight",

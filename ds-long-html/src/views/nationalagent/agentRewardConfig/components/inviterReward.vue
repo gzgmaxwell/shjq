@@ -9,28 +9,33 @@
     <el-table :data="tableData" border :span-method="objectSpanMethod">
       <el-table-column label="人数">
         <template slot-scope="scope">
-          <el-input-number
-            @change="
-              (val) => changeUserNum(val, scope.row, scope.$index, scope)
-            "
-            v-model="scope.row.userNum"
-            :step="1"
-            :precision="0"
-            :min="1"
-          />
+          <div class="userNumBox">
+            <el-input-number
+              :disabled="scope.row.userNum > 0"
+              @change="(val) => changeUserNum(val, scope.row, scope.$index)"
+              v-model="scope.row.userNum"
+              :step="1"
+              :precision="0"
+              :min="1"
+            />
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="福利类型">
         <template slot-scope="scope">
           <el-select
             v-model="scope.row.welfareType"
-            @change="(val) => changeWelfareType(val, scope.row, scope.$index)"
+            @change="
+              (val) => {
+                scope.row.type = undefined;
+                changeUserNum(val, scope.row, scope.$index);
+              }
+            "
             placeholder="请选择福利类型"
           >
             <el-option
               v-for="item in compuOptWelfareType(tableData, scope.row)"
               :key="item.id"
-              :disabled="item.disabled"
               :label="item.name"
               :value="item.id"
             >
@@ -46,8 +51,9 @@
             placeholder="请选择福利类型"
           >
             <el-option
-              v-for="item in compuOptProps(scope.row)"
+              v-for="item in compuOptProps(tableData, scope.row)"
               :key="item.id"
+              :disabled="item.disabled"
               :label="item.name"
               :value="item.id"
             >
@@ -68,15 +74,11 @@
         <template slot-scope="scope">
           <el-button
             type="primary"
-            v-if="scope.row.welfareType !== 'FOUNDATIONWELFARE'"
             :disabled="disabledAdd(scope.row)"
             @click="add(scope.row, scope.$index)"
             >添加</el-button
           >
-          <el-button
-            type="waring"
-            :disabled="tableData.length == 1"
-            @click="del(scope.row, scope.$index)"
+          <el-button type="waring" @click="del(scope.row, scope.$index)"
             >删除</el-button
           >
         </template>
@@ -103,24 +105,81 @@ export default {
       spanArr: [],
       optWelfareType: optWelfareType,
       optProps: optProps,
+      isFirst: false,
     };
   },
   computed: {
     compuOptProps() {
-      return (row) => {
+      return (tableData, row) => {
         // 福利类型：基础福利、额外福利。基础福利的道具类型仅无线观看、超级会员，额外福利的道具类型仅金币、观影卡。
+        let arr = [];
+        const is_UNLIMITED_WATCH = tableData.some(
+          (v) =>
+            v.userNum === row.userNum &&
+            v.welfareType === row.welfareType &&
+            v.type === EnumProps.UNLIMITED_WATCH
+        );
+        const is_SVIP = tableData.some(
+          (v) =>
+            v.userNum === row.userNum &&
+            v.welfareType === row.welfareType &&
+            v.type === EnumProps.SVIP
+        );
+        const is_GOLD = tableData.some(
+          (v) =>
+            v.userNum === row.userNum &&
+            v.welfareType === row.welfareType &&
+            v.type === EnumProps.GOLD
+        );
+        const is_VIDEO_CARD = tableData.some(
+          (v) =>
+            v.userNum === row.userNum &&
+            v.welfareType === row.welfareType &&
+            v.type === EnumProps.VIDEO_CARD
+        );
+        const is_INTEGRAL = tableData.some(
+          (v) =>
+            v.userNum === row.userNum &&
+            v.welfareType === row.welfareType &&
+            v.type === EnumProps.INTEGRAL
+        );
         if (row.welfareType == EnumWelfareType.FOUNDATIONWELFARE) {
-          const arr = optProps.filter(
-            (v) => v.id == EnumProps.UNLIMITED_WATCH || v.id == EnumProps.SVIP
+          arr = optProps.filter(
+            (v) =>
+              v.id == EnumProps.UNLIMITED_WATCH ||
+              v.id == EnumProps.SVIP ||
+              v.id == EnumProps.INTEGRAL
           );
-          return arr;
         }
         if (row.welfareType == EnumWelfareType.EXTRAWELFARE) {
-          const arr = optProps.filter(
-            (v) => v.id == EnumProps.GOLD || v.id == EnumProps.VIDEO_CARD
+          arr = optProps.filter(
+            (v) =>
+              v.id == EnumProps.GOLD ||
+              v.id == EnumProps.VIDEO_CARD ||
+              v.id == EnumProps.INTEGRAL
           );
-          return arr;
         }
+
+        arr.forEach((v) => (v.disabled = false));
+        arr.forEach((v) => {
+          if (v.id === EnumProps.UNLIMITED_WATCH && is_UNLIMITED_WATCH) {
+            v.disabled = true;
+          }
+          if (v.id === EnumProps.SVIP && is_SVIP) {
+            v.disabled = true;
+          }
+          if (v.id === EnumProps.GOLD && is_GOLD) {
+            v.disabled = true;
+          }
+          if (v.id === EnumProps.VIDEO_CARD && is_VIDEO_CARD) {
+            v.disabled = true;
+          }
+          if (v.id === EnumProps.INTEGRAL && is_INTEGRAL) {
+            v.disabled = true;
+          }
+        });
+        row.optType = arr;
+        return arr;
       };
     },
     compuOptWelfareType() {
@@ -156,11 +215,9 @@ export default {
           return true;
         }
         const tableData = this.tableData.filter(
-          (v) =>
-            row.userNum === v.userNum &&
-            v.welfareType === EnumWelfareType.EXTRAWELFARE
+          (v) => row.userNum === v.userNum && v.welfareType === row.welfareType
         );
-        return tableData.length > 1;
+        return tableData.length === row.optType.length;
       };
     },
   },
@@ -187,8 +244,9 @@ export default {
       this.getSpanArr(this.tableData, "userNum");
     },
     changeUserNum(val, row, index) {
-      const newTableData = JSON.parse(JSON.stringify(this.tableData));
       const isfilter = [];
+      const isfilterFOUNDATIONWELFARE = [];
+
       this.tableData.map((v) => {
         if (
           row.welfareType &&
@@ -198,45 +256,30 @@ export default {
         ) {
           isfilter.push(v);
         }
-      });
-      if (isfilter.length > 1) {
-        this.$message.warning("非基础福利类型的人数不能相同");
-        newTableData[index].userNum = "";
-        this.tableData = newTableData;
-        setTimeout(() => {
-          this.tableData[index].userNum = undefined;
-        });
-        this.getSpanArr(this.tableData, "userNum");
-        return;
-      }
-      this.getSpanArr(this.tableData, "userNum");
-    },
-    changeWelfareType(val, row, index) {
-      const newTableData = JSON.parse(JSON.stringify(this.tableData));
-      row.welfareType = val;
-      if (!row.welfareType) {
-        row.type = undefined;
-      }
-      const isfilter = [];
-      this.tableData.map((v) => {
+
         if (
           row.welfareType &&
-          row.welfareType === EnumWelfareType.EXTRAWELFARE &&
-          v.welfareType === EnumWelfareType.EXTRAWELFARE &&
+          row.welfareType === EnumWelfareType.FOUNDATIONWELFARE &&
+          v.welfareType === EnumWelfareType.FOUNDATIONWELFARE &&
           v.userNum === row.userNum
         ) {
-          isfilter.push(v);
+          isfilterFOUNDATIONWELFARE.push(v);
         }
       });
+
       if (isfilter.length > 1) {
-        this.$message.warning("非基础福利类型的人数不能相同");
-        newTableData[index].userNum = "";
-        this.tableData = newTableData;
+        this.$message.warning("额外福利类型的人数不能相同");
+        this.tableData[index].userNum = "";
         setTimeout(() => {
           this.tableData[index].userNum = undefined;
         });
-        this.getSpanArr(this.tableData, "userNum");
-        return;
+      }
+      if (isfilterFOUNDATIONWELFARE.length > 1) {
+        this.$message.warning("基础福利类型的人数不能相同");
+        this.tableData[index].userNum = "";
+        setTimeout(() => {
+          this.tableData[index].userNum = undefined;
+        });
       }
       this.getSpanArr(this.tableData, "userNum");
     },
@@ -258,8 +301,8 @@ export default {
     add(row, index) {
       const item = {
         userNum: row.userNum,
-        type: row.type,
-        num: row.num,
+        type: undefined,
+        num: undefined,
         inviteType: row.inviteType,
         welfareType: row.welfareType,
       };
@@ -283,9 +326,19 @@ export default {
             data[i][attr] === data[i - 1][attr] &&
             data[i][attr] &&
             data[i - 1]["welfareType"] &&
-            data[i - 1]["welfareType"] !== EnumWelfareType.FOUNDATIONWELFARE &&
+            data[i - 1]["welfareType"] == EnumWelfareType.FOUNDATIONWELFARE &&
             data[i]["welfareType"] &&
-            data[i]["welfareType"] !== EnumWelfareType.FOUNDATIONWELFARE
+            data[i]["welfareType"] == EnumWelfareType.FOUNDATIONWELFARE
+          ) {
+            this.spanArr[pos] += 1;
+            this.spanArr.push(0);
+          } else if (
+            data[i][attr] === data[i - 1][attr] &&
+            data[i][attr] &&
+            data[i - 1]["welfareType"] &&
+            data[i - 1]["welfareType"] == EnumWelfareType.EXTRAWELFARE &&
+            data[i]["welfareType"] &&
+            data[i]["welfareType"] == EnumWelfareType.EXTRAWELFARE
           ) {
             this.spanArr[pos] += 1;
             this.spanArr.push(0);
@@ -310,3 +363,13 @@ export default {
   },
 };
 </script>
+<style lang="scss" scoped>
+.userNumBox {
+  ::v-deep .el-input-number__decrease {
+    display: none;
+  }
+  ::v-deep .el-input-number__increase {
+    display: none;
+  }
+}
+</style>

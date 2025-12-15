@@ -17,6 +17,7 @@
       <videoWatchInit />
       <videoWatchCard />
       <adDisplayOdds />
+      <timeStamp v-if="permissions.sys_timeStamp_settings" />
     </div>
   </basic-container>
 </template>
@@ -31,6 +32,7 @@ import videoLine from "@/views/common/videoSetingCofig/videoLine.vue";
 import videoWatchInit from "@/views/common/videoSetingCofig/videoWatchInit.vue";
 import videoWatchCard from "@/views/common/videoSetingCofig/videoWatchCard.vue";
 import adDisplayOdds from "@/views/common/videoSetingCofig/adDisplayOdds.vue";
+import timeStamp from "@/views/common/videoSetingCofig/timeStamp.vue";
 import { mapGetters } from "vuex";
 export default {
   components: {
@@ -44,6 +46,7 @@ export default {
     videoWatchInit,
     videoWatchCard,
     adDisplayOdds,
+    timeStamp,
   },
   computed: {
     ...mapGetters({
